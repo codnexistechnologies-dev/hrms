@@ -280,28 +280,23 @@ class _AddRetailerDistributorVisitEntryState
           readOnly: true,
         ),
       orderTakenDropdown(),
-      if (orderTaken)
-        textField('ORDER_VALUE', 'Order Value', limit: 19, required: true),
+      if (orderTaken) ...[
+        productDropdown(required: true),
+        textField(
+          'ORDER_VALUE',
+          'Order Value(In lakh)',
+          limit: 19,
+          required: true,
+        ),
+      ],
       textField(
         'STOCK_AVAILABLE',
-        'Stock Available',
+        'Stock Available(Inventory)',
         limit: 250,
         required: true,
       ),
-      productDropdown(required: true),
-      textField(
-        'PRODUCT_DISCUSSED',
-        'Product Discussed',
-        limit: 500,
-        required: true,
-      ),
+
       otherProductDiscussDropdown(),
-      textField(
-        'COMPETITOR_PRODUCT',
-        'Competitor Product',
-        limit: 500,
-        required: true,
-      ),
       textField(
         'SCHEME_DISCUSSED',
         'Scheme Discussed',

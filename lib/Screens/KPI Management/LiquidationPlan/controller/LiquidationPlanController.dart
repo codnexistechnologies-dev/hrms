@@ -16,6 +16,7 @@ class LiquidationPlanController extends GetxController {
   var isSaveLiquaidationPlanLoding = false.obs;
   Future<Map<String, dynamic>> saveLiquidationPlan(
     BuildContext context,
+    int productCode,
     int? txtAchieved,
     String txtRemarks,
   ) async {
@@ -26,6 +27,7 @@ class LiquidationPlanController extends GetxController {
     try {
       dio.FormData formData = dio.FormData.fromMap({
         'EMP_CODE': empCode,
+        'PRODUCT_CODE': productCode,
         'LIQUIDATION_ACHIEVED': txtAchieved,
         'REMARKS': txtRemarks,
       });

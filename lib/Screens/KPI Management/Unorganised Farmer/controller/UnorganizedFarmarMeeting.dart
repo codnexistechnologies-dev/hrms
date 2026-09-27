@@ -27,6 +27,8 @@ class UnorganizedFarmerMeetingController extends GetxController {
     double? txtLong,
     String? txtAddress,
     File? imagesFile,
+    String farmerText,
+    String mobileText,
   ) async {
     isSaveUnorganisedFarmerLoding.value = true;
     update();
@@ -56,6 +58,8 @@ class UnorganizedFarmerMeetingController extends GetxController {
           imagesFile.path,
           filename: imageFile,
         ),
+        "FARMER_NAME": farmerText,
+        "MOBILE_NO": mobileText,
       });
 
       var myDio = dio.Dio();

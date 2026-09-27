@@ -1,4 +1,5 @@
 import 'dart:io';
+
 import 'package:aeon_hrms/Screens/KPI%20Management/Demo%20Plan/controller/DemoPlanController.dart';
 import 'package:aeon_hrms/Screens/KPI%20Management/Demo%20Plan/model/DistrictMasterModel.dart';
 import 'package:aeon_hrms/Screens/KPI%20Management/Demo%20Plan/model/ProductMasterListModel.dart';
@@ -39,14 +40,16 @@ class _AddUnorganizedFarmerMeetingState
   bool _isImagesLoading = false; // State to track loading status
   final ImagePicker _picker = ImagePicker();
   final demoPlanController = Get.put(DemoPlanController()); // GetX Control
-  final unorganisedplanController =
-      Get.put(UnorganizedFarmerMeetingController()); // GetX Control
+  final unorganisedplanController = Get.put(
+    UnorganizedFarmerMeetingController(),
+  ); // GetX Control
   final TextEditingController txt_PinCode = TextEditingController();
   final TextEditingController txt_NoOfFarmerattendance =
       TextEditingController();
   final TextEditingController txt_VillageName = TextEditingController();
+  final TextEditingController txt_FarmerName = TextEditingController();
+  final TextEditingController txt_MobileNumber = TextEditingController();
   final TextEditingController txt_Remarks = TextEditingController();
-
   @override
   void dispose() {
     txt_NoOfFarmerattendance.dispose();
@@ -105,14 +108,17 @@ class _AddUnorganizedFarmerMeetingState
 
   Future<void> bindLocatation() async {
     Position position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high);
+      desiredAccuracy: LocationAccuracy.high,
+    );
 
     _latitude = position.latitude;
     _longitude = position.longitude;
 
     // Get address from coordinates
-    List<Placemark> placemarks =
-        await placemarkFromCoordinates(_latitude!, _longitude!);
+    List<Placemark> placemarks = await placemarkFromCoordinates(
+      _latitude!,
+      _longitude!,
+    );
 
     if (placemarks.isNotEmpty) {
       _address =
@@ -162,7 +168,8 @@ class _AddUnorganizedFarmerMeetingState
     } else if (_address == null || _latitude == null || _longitude == null) {
       Utility.alertInfo(
         context,
-        data: "Please ensure the following:\n\n"
+        data:
+            "Please ensure the following:\n\n"
             "1. GPS/Location services are turned on.\n"
             "2. Location permissions are granted to the app.\n"
             "3. Internet connectivity is enabled for address detection.",
@@ -172,21 +179,24 @@ class _AddUnorganizedFarmerMeetingState
       Utility.alertInfo(context, data: "Image file is missing or invalid.");
       return;
     } else {
-      Map<String, dynamic> result =
-          await unorganisedplanController.saveUnorganizedFarmerMeeting(
-              context,
-              demoPlanController.productselectedValue.value?.productCode,
-              demoPlanController.selectedCrop.value?.croPCODE,
-              demoPlanController.selectedState.value?.statECODE,
-              demoPlanController.selectedDistrict.value?.districTCODE,
-              demoPlanController.selectedTehsil.value?.tehsiLCODE,
-              demoPlanController.selectedvillage.value?.villagECODE,
-              int.parse(txt_NoOfFarmerattendance.text),
-              txt_Remarks.text,
-              _latitude,
-              _longitude,
-              _address,
-              _image);
+      Map<String, dynamic> result = await unorganisedplanController
+          .saveUnorganizedFarmerMeeting(
+            context,
+            demoPlanController.productselectedValue.value?.productCode,
+            demoPlanController.selectedCrop.value?.croPCODE,
+            demoPlanController.selectedState.value?.statECODE,
+            demoPlanController.selectedDistrict.value?.districTCODE,
+            demoPlanController.selectedTehsil.value?.tehsiLCODE,
+            demoPlanController.selectedvillage.value?.villagECODE,
+            int.parse(txt_NoOfFarmerattendance.text),
+            txt_Remarks.text,
+            _latitude,
+            _longitude,
+            _address,
+            _image,
+            txt_FarmerName.text,
+            txt_MobileNumber.text,
+          );
       if (result['status'] == 200) {
         // Check for success (status code 200)
         Utility.alertSucess(context, data: result['message']);
@@ -233,13 +243,15 @@ class _AddUnorganizedFarmerMeetingState
         _capturedDateTime = DateTime.now();
         await bindLocatation();
         // Callback with image and location data
-        widget.onImageCaptured(ImageAndLocationData(
-          imagePath: _image!.path,
-          latitude: _latitude!,
-          longitude: _longitude!,
-          locationName: _address ?? "Unknown",
-          capturedDateTime: _capturedDateTime!,
-        ));
+        widget.onImageCaptured(
+          ImageAndLocationData(
+            imagePath: _image!.path,
+            latitude: _latitude!,
+            longitude: _longitude!,
+            locationName: _address ?? "Unknown",
+            capturedDateTime: _capturedDateTime!,
+          ),
+        );
       } else {
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text("Image capture canceled.")));
@@ -247,7 +259,8 @@ class _AddUnorganizedFarmerMeetingState
     } catch (e) {
       print("Error: $e");
       ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Failed to capture image and location.")));
+        SnackBar(content: Text("Failed to capture image and location.")),
+      );
     } finally {
       setState(() {
         _isImagesLoading = false; // Stop loading
@@ -275,8 +288,10 @@ class _AddUnorganizedFarmerMeetingState
           // Add a placeholder item with a null value
           DropdownMenuItem<ProductData>(
             value: null,
-            child: Text("Select Product Name",
-                style: TextStyle(color: Colors.grey)),
+            child: Text(
+              "Select Product Name",
+              style: TextStyle(color: Colors.grey),
+            ),
           ),
           ...demoPlanController.productList.map((product) {
             return DropdownMenuItem<ProductData>(
@@ -309,8 +324,10 @@ class _AddUnorganizedFarmerMeetingState
           // Add a placeholder item with a null value
           DropdownMenuItem<CropMast>(
             value: null,
-            child:
-                Text("Select Crop Name", style: TextStyle(color: Colors.grey)),
+            child: Text(
+              "Select Crop Name",
+              style: TextStyle(color: Colors.grey),
+            ),
           ),
           ...demoPlanController.cropList.map((crop) {
             return DropdownMenuItem<CropMast>(
@@ -345,8 +362,10 @@ class _AddUnorganizedFarmerMeetingState
           // Add a placeholder item with a null value
           DropdownMenuItem<StateData>(
             value: null,
-            child:
-                Text("Select State Name", style: TextStyle(color: Colors.grey)),
+            child: Text(
+              "Select State Name",
+              style: TextStyle(color: Colors.grey),
+            ),
           ),
           ...demoPlanController.stateList.map((state) {
             return DropdownMenuItem<StateData>(
@@ -382,8 +401,10 @@ class _AddUnorganizedFarmerMeetingState
           // Add a placeholder item with a null value
           DropdownMenuItem<DistrictData>(
             value: null,
-            child: Text("Select District Name",
-                style: TextStyle(color: Colors.grey)),
+            child: Text(
+              "Select District Name",
+              style: TextStyle(color: Colors.grey),
+            ),
           ),
           ...demoPlanController.districtList.map((district) {
             return DropdownMenuItem<DistrictData>(
@@ -418,8 +439,10 @@ class _AddUnorganizedFarmerMeetingState
           // Add a placeholder item with a null value
           DropdownMenuItem<TehsilData>(
             value: null,
-            child: Text("Select Tehsil Name",
-                style: TextStyle(color: Colors.grey)),
+            child: Text(
+              "Select Tehsil Name",
+              style: TextStyle(color: Colors.grey),
+            ),
           ),
           ...demoPlanController.tehsilList.map((tehsil) {
             return DropdownMenuItem<TehsilData>(
@@ -455,8 +478,10 @@ class _AddUnorganizedFarmerMeetingState
           // Add a placeholder item with a null value
           DropdownMenuItem<VillageData>(
             value: null,
-            child: Text("Select Village Name",
-                style: TextStyle(color: Colors.grey)),
+            child: Text(
+              "Select Village Name",
+              style: TextStyle(color: Colors.grey),
+            ),
           ),
           ...demoPlanController.villageList.map((village) {
             return DropdownMenuItem<VillageData>(
@@ -481,307 +506,356 @@ class _AddUnorganizedFarmerMeetingState
         title: Text(
           'Add Unorganized Farmer Meeting',
           style: kTextStyle.copyWith(
-              color: Colors.white, fontWeight: FontWeight.bold),
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ),
       body: SingleChildScrollView(
-        child: GetBuilder(builder: (DemoPlanController controller) {
-          return controller.isDemoPlanLoading == true
-              ? const Center(child: CircularProgressIndicator())
-              : Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(
-                      height: 20.0,
-                    ),
-                    Container(
-                      //height: context.height(),
-                      padding: const EdgeInsets.all(20.0),
-                      decoration: const BoxDecoration(
-                        borderRadius: BorderRadius.only(
+        child: GetBuilder(
+          builder: (DemoPlanController controller) {
+            return controller.isDemoPlanLoading == true
+                ? const Center(child: CircularProgressIndicator())
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 20.0),
+                      Container(
+                        //height: context.height(),
+                        padding: const EdgeInsets.all(20.0),
+                        decoration: const BoxDecoration(
+                          borderRadius: BorderRadius.only(
                             topLeft: Radius.circular(30.0),
-                            topRight: Radius.circular(30.0)),
-                        color: Colors.white,
-                      ),
-                      child: Form(
-                        key: _formKey,
-                        child: Column(
-                          children: [
-                            const SizedBox(
-                              height: 15.0,
-                            ),
-                            SizedBox(
-                              height: 55.0,
-                              child: FormField(
-                                builder: (FormFieldState<dynamic> field) {
-                                  return InputDecorator(
-                                    decoration: InputDecoration(
+                            topRight: Radius.circular(30.0),
+                          ),
+                          color: Colors.white,
+                        ),
+                        child: Form(
+                          key: _formKey,
+                          child: Column(
+                            children: [
+                              const SizedBox(height: 15.0),
+                              SizedBox(
+                                height: 55.0,
+                                child: FormField(
+                                  builder: (FormFieldState<dynamic> field) {
+                                    return InputDecorator(
+                                      decoration: InputDecoration(
                                         floatingLabelBehavior:
                                             FloatingLabelBehavior.always,
                                         labelText: 'Select Product Name',
                                         labelStyle: kTextStyle,
                                         border: OutlineInputBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(5.0))),
-                                    child: DropdownButtonHideUnderline(
-                                        child: getProductMast()),
-                                  );
-                                },
+                                          borderRadius: BorderRadius.circular(
+                                            5.0,
+                                          ),
+                                        ),
+                                      ),
+                                      child: DropdownButtonHideUnderline(
+                                        child: getProductMast(),
+                                      ),
+                                    );
+                                  },
+                                ),
                               ),
-                            ),
-                            const SizedBox(
-                              height: 15.0,
-                            ),
-                            SizedBox(
-                              height: 55.0,
-                              child: FormField(
-                                builder: (FormFieldState<dynamic> field) {
-                                  return InputDecorator(
-                                    decoration: InputDecoration(
+                              const SizedBox(height: 15.0),
+                              SizedBox(
+                                height: 55.0,
+                                child: FormField(
+                                  builder: (FormFieldState<dynamic> field) {
+                                    return InputDecorator(
+                                      decoration: InputDecoration(
                                         floatingLabelBehavior:
                                             FloatingLabelBehavior.always,
                                         labelText: 'Select Crop',
                                         labelStyle: kTextStyle,
                                         border: OutlineInputBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(5.0))),
-                                    child: DropdownButtonHideUnderline(
-                                        child: getCropMast()),
-                                  );
-                                },
+                                          borderRadius: BorderRadius.circular(
+                                            5.0,
+                                          ),
+                                        ),
+                                      ),
+                                      child: DropdownButtonHideUnderline(
+                                        child: getCropMast(),
+                                      ),
+                                    );
+                                  },
+                                ),
                               ),
-                            ),
-                            const SizedBox(
-                              height: 15.0,
-                            ),
-                            SizedBox(
-                              height: 55.0,
-                              child: FormField(
-                                builder: (FormFieldState<dynamic> field) {
-                                  return InputDecorator(
-                                    decoration: InputDecoration(
+                              const SizedBox(height: 15.0),
+                              SizedBox(
+                                height: 55.0,
+                                child: FormField(
+                                  builder: (FormFieldState<dynamic> field) {
+                                    return InputDecorator(
+                                      decoration: InputDecoration(
                                         floatingLabelBehavior:
                                             FloatingLabelBehavior.always,
                                         labelText: 'Select State',
                                         labelStyle: kTextStyle,
                                         border: OutlineInputBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(5.0))),
-                                    child: DropdownButtonHideUnderline(
-                                        child: getStateMast()),
-                                  );
-                                },
+                                          borderRadius: BorderRadius.circular(
+                                            5.0,
+                                          ),
+                                        ),
+                                      ),
+                                      child: DropdownButtonHideUnderline(
+                                        child: getStateMast(),
+                                      ),
+                                    );
+                                  },
+                                ),
                               ),
-                            ),
-                            const SizedBox(
-                              height: 15.0,
-                            ),
-                            SizedBox(
-                              height: 55.0,
-                              child: FormField(
-                                builder: (FormFieldState<dynamic> field) {
-                                  return InputDecorator(
-                                    decoration: InputDecoration(
+                              const SizedBox(height: 15.0),
+                              SizedBox(
+                                height: 55.0,
+                                child: FormField(
+                                  builder: (FormFieldState<dynamic> field) {
+                                    return InputDecorator(
+                                      decoration: InputDecoration(
                                         floatingLabelBehavior:
                                             FloatingLabelBehavior.always,
                                         labelText: 'Select District',
                                         labelStyle: kTextStyle,
                                         border: OutlineInputBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(5.0))),
-                                    child: DropdownButtonHideUnderline(
-                                        child: getDistrictMast()),
-                                  );
-                                },
+                                          borderRadius: BorderRadius.circular(
+                                            5.0,
+                                          ),
+                                        ),
+                                      ),
+                                      child: DropdownButtonHideUnderline(
+                                        child: getDistrictMast(),
+                                      ),
+                                    );
+                                  },
+                                ),
                               ),
-                            ),
-                            const SizedBox(
-                              height: 15.0,
-                            ),
-                            SizedBox(
-                              height: 55.0,
-                              child: FormField(
-                                builder: (FormFieldState<dynamic> field) {
-                                  return InputDecorator(
-                                    decoration: InputDecoration(
+                              const SizedBox(height: 15.0),
+                              SizedBox(
+                                height: 55.0,
+                                child: FormField(
+                                  builder: (FormFieldState<dynamic> field) {
+                                    return InputDecorator(
+                                      decoration: InputDecoration(
                                         floatingLabelBehavior:
                                             FloatingLabelBehavior.always,
                                         labelText: 'Select Tehsil',
                                         labelStyle: kTextStyle,
                                         border: OutlineInputBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(5.0))),
-                                    child: DropdownButtonHideUnderline(
-                                        child: getTehsilMast()),
-                                  );
-                                },
+                                          borderRadius: BorderRadius.circular(
+                                            5.0,
+                                          ),
+                                        ),
+                                      ),
+                                      child: DropdownButtonHideUnderline(
+                                        child: getTehsilMast(),
+                                      ),
+                                    );
+                                  },
+                                ),
                               ),
-                            ),
-                            const SizedBox(
-                              height: 15.0,
-                            ),
-                            SizedBox(
-                              height: 55.0,
-                              child: FormField(
-                                builder: (FormFieldState<dynamic> field) {
-                                  return InputDecorator(
-                                    decoration: InputDecoration(
+                              const SizedBox(height: 15.0),
+                              SizedBox(
+                                height: 55.0,
+                                child: FormField(
+                                  builder: (FormFieldState<dynamic> field) {
+                                    return InputDecorator(
+                                      decoration: InputDecoration(
                                         floatingLabelBehavior:
                                             FloatingLabelBehavior.always,
                                         labelText: 'Select Village',
                                         labelStyle: kTextStyle,
                                         border: OutlineInputBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(5.0))),
-                                    child: DropdownButtonHideUnderline(
-                                        child: getVillageMast()),
-                                  );
-                                },
-                              ),
-                            ),
-                            const SizedBox(
-                              height: 15.0,
-                            ),
-                            SizedBox(
-                              child: AppTextField(
-                                controller: txt_PinCode,
-                                textFieldType: TextFieldType.NAME,
-                                decoration: const InputDecoration(
-                                  labelText: "Pincode",
-                                  enabled: false,
-                                  floatingLabelBehavior:
-                                      FloatingLabelBehavior.always,
-                                  hintText: "Pincode",
-                                  border: OutlineInputBorder(),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(
-                              height: 20.0,
-                            ),
-                            SizedBox(
-                              height: 50,
-                              child: TextFormField(
-                                controller: txt_NoOfFarmerattendance,
-                                keyboardType: TextInputType.number,
-                                inputFormatters: [
-                                  FilteringTextInputFormatter
-                                      .digitsOnly, // Allow only digits
-                                ],
-                                decoration: const InputDecoration(
-                                  labelText: "No. of farmers attended",
-                                  floatingLabelBehavior:
-                                      FloatingLabelBehavior.always,
-                                  hintText: "No. of farmers attended",
-                                  border: OutlineInputBorder(),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(
-                              height: 20.0,
-                            ),
-                            AppTextField(
-                              controller: txt_Remarks,
-                              textFieldType: TextFieldType.MULTILINE,
-                              decoration: const InputDecoration(
-                                labelText: 'Remarks',
-                                enabled: true,
-                                floatingLabelBehavior:
-                                    FloatingLabelBehavior.always,
-                                border: OutlineInputBorder(),
-                              ),
-                            ),
-                            const SizedBox(
-                              height: 10.0,
-                            ),
-                            ElevatedButton.icon(
-                              onPressed: _isImagesLoading
-                                  ? null
-                                  : _captureImageAndLocation, // Disable button while loading
-                              icon: Icon(Icons.camera),
-                              label: Text("Capture Image with Location"),
-                            ),
-                            SizedBox(height: 20),
-                            if (_isImagesLoading)
-                              Center(
-                                child:
-                                    CircularProgressIndicator(), // Show loading indicator
-                              ),
-                            if (!_isImagesLoading && _image != null)
-                              Column(
-                                children: [
-                                  Stack(
-                                    alignment: Alignment.bottomCenter,
-                                    children: [
-                                      Image.file(
-                                        _image!,
-                                        height: 400,
-                                        width: double.infinity,
-                                        fit: BoxFit.cover,
-                                      ),
-                                      Container(
-                                        width: double.infinity,
-                                        color: Colors.black.withValues(alpha: 0.5),
-                                        padding: EdgeInsets.all(8.0),
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Text(
-                                              "Latitude: $_latitude",
-                                              style: TextStyle(
-                                                  color: Colors.white),
-                                            ),
-                                            Text(
-                                              "Longitude: $_longitude",
-                                              style: TextStyle(
-                                                  color: Colors.white),
-                                            ),
-                                            Text(
-                                              "Address: $_address",
-                                              style: TextStyle(
-                                                  color: Colors.white),
-                                            ),
-                                            Text(
-                                              "Captured Date-Time: $_capturedDateTime",
-                                              style: TextStyle(
-                                                  color: Colors.white),
-                                            ),
-                                          ],
+                                          borderRadius: BorderRadius.circular(
+                                            5.0,
+                                          ),
                                         ),
                                       ),
-                                    ],
-                                  ),
-                                ],
+                                      child: DropdownButtonHideUnderline(
+                                        child: getVillageMast(),
+                                      ),
+                                    );
+                                  },
+                                ),
                               ),
-                            if (!_isImagesLoading && _image == null)
-                              Text("No image captured yet."),
-                            SizedBox(height: 20),
-                            ButtonGlobal(
-                              buttontext: unorganisedplanController
-                                      .isSaveUnorganisedFarmerLoding.value
-                                  ? "Processing"
-                                  : 'Save',
-                              buttonDecoration:
-                                  kButtonDecoration.copyWith(color: kMainColor),
-                              onPressed: () {
-                                if (!unorganisedplanController
-                                    .isSaveUnorganisedFarmerLoding.value) {
-                                  saveUnorganizedMeetingData();
-                                }
-                              },
-                            ),
-                            const SizedBox(
-                              height: 20.0,
-                            ),
-                          ],
+                              const SizedBox(height: 15.0),
+                              SizedBox(
+                                child: AppTextField(
+                                  controller: txt_PinCode,
+                                  textFieldType: TextFieldType.NAME,
+                                  decoration: const InputDecoration(
+                                    labelText: "Pincode",
+                                    enabled: false,
+                                    floatingLabelBehavior:
+                                        FloatingLabelBehavior.always,
+                                    hintText: "Pincode",
+                                    border: OutlineInputBorder(),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 20.0),
+                              SizedBox(
+                                height: 50,
+                                child: TextFormField(
+                                  controller: txt_FarmerName,
+                                  keyboardType: TextInputType.emailAddress,
+                                  decoration: const InputDecoration(
+                                    labelText: "Farmers Name",
+                                    floatingLabelBehavior:
+                                        FloatingLabelBehavior.always,
+                                    hintText: "Farmers Name",
+                                    border: OutlineInputBorder(),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 20.0),
+                              SizedBox(
+                                child: TextFormField(
+                                  controller: txt_MobileNumber,
+                                  keyboardType: TextInputType.number,
+                                  inputFormatters: [
+                                    FilteringTextInputFormatter
+                                        .digitsOnly, // Allow only digits
+                                  ],
+                                  maxLength: 10,
+                                  // Limit to 10 digits
+                                  decoration: const InputDecoration(
+                                    labelText: "Mobile No.",
+                                    floatingLabelBehavior:
+                                        FloatingLabelBehavior.always,
+                                    hintText: "Mobile No.",
+                                    border: OutlineInputBorder(),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 20.0),
+                              SizedBox(
+                                height: 50,
+                                child: TextFormField(
+                                  controller: txt_NoOfFarmerattendance,
+                                  keyboardType: TextInputType.number,
+                                  inputFormatters: [
+                                    FilteringTextInputFormatter
+                                        .digitsOnly, // Allow only digits
+                                  ],
+                                  decoration: const InputDecoration(
+                                    labelText: "No. of farmers attended",
+                                    floatingLabelBehavior:
+                                        FloatingLabelBehavior.always,
+                                    hintText: "No. of farmers attended",
+                                    border: OutlineInputBorder(),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 20.0),
+                              AppTextField(
+                                controller: txt_Remarks,
+                                textFieldType: TextFieldType.MULTILINE,
+                                decoration: const InputDecoration(
+                                  labelText: 'Remarks',
+                                  enabled: true,
+                                  floatingLabelBehavior:
+                                      FloatingLabelBehavior.always,
+                                  border: OutlineInputBorder(),
+                                ),
+                              ),
+                              const SizedBox(height: 10.0),
+                              ElevatedButton.icon(
+                                onPressed: _isImagesLoading
+                                    ? null
+                                    : _captureImageAndLocation, // Disable button while loading
+                                icon: Icon(Icons.camera),
+                                label: Text("Capture Image with Location"),
+                              ),
+                              SizedBox(height: 20),
+                              if (_isImagesLoading)
+                                Center(
+                                  child: CircularProgressIndicator(), // Show loading indicator
+                                ),
+                              if (!_isImagesLoading && _image != null)
+                                Column(
+                                  children: [
+                                    Stack(
+                                      alignment: Alignment.bottomCenter,
+                                      children: [
+                                        Image.file(
+                                          _image!,
+                                          height: 400,
+                                          width: double.infinity,
+                                          fit: BoxFit.cover,
+                                        ),
+                                        Container(
+                                          width: double.infinity,
+                                          color: Colors.black.withValues(
+                                            alpha: 0.5,
+                                          ),
+                                          padding: EdgeInsets.all(8.0),
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Text(
+                                                "Latitude: $_latitude",
+                                                style: TextStyle(
+                                                  color: Colors.white,
+                                                ),
+                                              ),
+                                              Text(
+                                                "Longitude: $_longitude",
+                                                style: TextStyle(
+                                                  color: Colors.white,
+                                                ),
+                                              ),
+                                              Text(
+                                                "Address: $_address",
+                                                style: TextStyle(
+                                                  color: Colors.white,
+                                                ),
+                                              ),
+                                              Text(
+                                                "Captured Date-Time: $_capturedDateTime",
+                                                style: TextStyle(
+                                                  color: Colors.white,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              if (!_isImagesLoading && _image == null)
+                                Text("No image captured yet."),
+                              SizedBox(height: 20),
+                              ButtonGlobal(
+                                buttontext:
+                                    unorganisedplanController
+                                        .isSaveUnorganisedFarmerLoding
+                                        .value
+                                    ? "Processing"
+                                    : 'Save',
+                                buttonDecoration: kButtonDecoration.copyWith(
+                                  color: kMainColor,
+                                ),
+                                onPressed: () {
+                                  if (!unorganisedplanController
+                                      .isSaveUnorganisedFarmerLoding
+                                      .value) {
+                                    saveUnorganizedMeetingData();
+                                  }
+                                },
+                              ),
+                              const SizedBox(height: 20.0),
+                            ],
+                          ),
                         ),
                       ),
-                    ),
-                  ],
-                );
-        }),
+                    ],
+                  );
+          },
+        ),
       ),
     );
   }

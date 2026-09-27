@@ -1,7 +1,6 @@
 import 'dart:convert';
 
 import 'package:aeon_hrms/Screens/KPI%20Management/Collection%20Plan/model/CollectionPlanAchiModel.dart';
-import 'package:aeon_hrms/Utility/MLString.dart';
 import 'package:aeon_hrms/Utility/api_constants.dart';
 import 'package:aeon_hrms/Utility/shared_preferences_service.dart';
 import 'package:flutter/material.dart';
@@ -17,6 +16,8 @@ class CollectionPlanController extends GetxController {
     BuildContext context,
     int? txtAchieved,
     String txtRemarks,
+    String visitType,
+    String contactPersonId,
   ) async {
     isSaveCollectionPlanLoding.value = true;
     update();
@@ -27,6 +28,8 @@ class CollectionPlanController extends GetxController {
         'EMP_CODE': empCode,
         'COLLECTION_ACHIEVED': txtAchieved,
         'REMARKS': txtRemarks,
+        'VISIT_TYPE': visitType,
+        'RETAIL_DIST_ID': contactPersonId,
       });
 
       var myDio = dio.Dio();

@@ -6,6 +6,8 @@ import 'package:aeon_hrms/GlobalComponents/button_global.dart';
 import 'package:aeon_hrms/constant.dart';
 import 'package:nb_utils/nb_utils.dart';
 
+import '../../widgets/contact_entry_form_support.dart';
+
 class AddLiquidationPlan extends StatefulWidget {
   const AddLiquidationPlan({super.key});
 
@@ -13,9 +15,12 @@ class AddLiquidationPlan extends StatefulWidget {
   _AddLiquidationPlanState createState() => _AddLiquidationPlanState();
 }
 
-class _AddLiquidationPlanState extends State<AddLiquidationPlan> {
-  final liquidationPlanController =
-      Get.put(LiquidationPlanController(), permanent: true);
+class _AddLiquidationPlanState
+    extends ContactEntryFormState<AddLiquidationPlan> {
+  final liquidationPlanController = Get.put(
+    LiquidationPlanController(),
+    permanent: true,
+  );
   final TextEditingController txt_Atdate = TextEditingController();
   final TextEditingController txt_Target = TextEditingController();
   final TextEditingController txt_Achieved = TextEditingController();
@@ -23,11 +28,12 @@ class _AddLiquidationPlanState extends State<AddLiquidationPlan> {
 
   @override
   void dispose() {
-    super.dispose();
     Get.delete<LiquidationPlanController>();
+    txt_Atdate.dispose();
     txt_Target.dispose();
     txt_Achieved.dispose();
     txt_Remarks.dispose();
+    super.dispose();
   }
 
   final _formKey = GlobalKey<FormState>();
@@ -42,16 +48,23 @@ class _AddLiquidationPlanState extends State<AddLiquidationPlan> {
 
   bool isLoading = false;
   Future<void> saveLiquidationPlanData() async {
+    final productCode =
+        demoPlanController.productselectedValue.value?.productCode;
+    if (productCode == null) {
+      Utility.alertInfo(context, data: 'Please Select Product Name.');
+      return;
+    }
     if (txt_Achieved.text == "") {
       Utility.alertInfo(context, data: "Achieved Can't be blank.");
       return;
     } else {
-      Map<String, dynamic> result =
-          await liquidationPlanController.saveLiquidationPlan(
-        context,
-        int.parse(txt_Achieved.text),
-        txt_Remarks.text,
-      );
+      Map<String, dynamic> result = await liquidationPlanController
+          .saveLiquidationPlan(
+            context,
+            productCode,
+            int.parse(txt_Achieved.text),
+            txt_Remarks.text,
+          );
       if (result['status'] == 200) {
         // Check for success (status code 200)
         Utility.alertSucess(context, data: result['message']);
@@ -78,7 +91,9 @@ class _AddLiquidationPlanState extends State<AddLiquidationPlan> {
         title: Text(
           'Add Liquidation Plan',
           style: kTextStyle.copyWith(
-              color: Colors.white, fontWeight: FontWeight.bold),
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ),
       body: SingleChildScrollView(
@@ -90,25 +105,22 @@ class _AddLiquidationPlanState extends State<AddLiquidationPlan> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const SizedBox(
-                      height: 20.0,
-                    ),
+                    const SizedBox(height: 20.0),
                     Container(
                       height: MediaQuery.of(context).size.height,
                       padding: const EdgeInsets.all(20.0),
                       decoration: const BoxDecoration(
                         borderRadius: BorderRadius.only(
-                            topLeft: Radius.circular(30.0),
-                            topRight: Radius.circular(30.0)),
+                          topLeft: Radius.circular(30.0),
+                          topRight: Radius.circular(30.0),
+                        ),
                         color: Colors.white,
                       ),
                       child: Form(
                         key: _formKey,
                         child: Column(
                           children: [
-                            const SizedBox(
-                              height: 20.0,
-                            ),
+                            const SizedBox(height: 20.0),
                             SizedBox(
                               child: AppTextField(
                                 controller: txt_Atdate,
@@ -123,18 +135,22 @@ class _AddLiquidationPlanState extends State<AddLiquidationPlan> {
                                 ),
                               ),
                             ),
-                            const SizedBox(
-                              height: 20.0,
-                            ),
+                            const SizedBox(height: 20.0),
+                            productDropdown(required: true),
+                            const SizedBox(height: 20.0),
                             SizedBox(
                               child: AppTextField(
                                 controller: txt_Target
-                                  ..text = liquidationPlanController
-                                          .kpimasterList.isNotEmpty
-                                      ? (liquidationPlanController.kpimasterList
-                                                  .first.liquidatioNPLAN ??
-                                              0)
-                                          .toString()
+                                  ..text =
+                                      liquidationPlanController
+                                          .kpimasterList
+                                          .isNotEmpty
+                                      ? (liquidationPlanController
+                                                    .kpimasterList
+                                                    .first
+                                                    .liquidatioNPLAN ??
+                                                0)
+                                            .toString()
                                       : "0",
                                 textFieldType: TextFieldType.NAME,
                                 decoration: const InputDecoration(
@@ -147,9 +163,7 @@ class _AddLiquidationPlanState extends State<AddLiquidationPlan> {
                                 ),
                               ),
                             ),
-                            const SizedBox(
-                              height: 20.0,
-                            ),
+                            const SizedBox(height: 20.0),
                             SizedBox(
                               height: 50,
                               child: AppTextField(
@@ -164,9 +178,7 @@ class _AddLiquidationPlanState extends State<AddLiquidationPlan> {
                                 ),
                               ),
                             ),
-                            const SizedBox(
-                              height: 20.0,
-                            ),
+                            const SizedBox(height: 20.0),
                             AppTextField(
                               controller: txt_Remarks,
                               textFieldType: TextFieldType.MULTILINE,
@@ -179,26 +191,26 @@ class _AddLiquidationPlanState extends State<AddLiquidationPlan> {
                               ),
                             ),
                             //const Spacer(),
-                            const SizedBox(
-                              height: 40.0,
-                            ),
+                            const SizedBox(height: 40.0),
                             ButtonGlobal(
-                              buttontext: liquidationPlanController
-                                      .isSaveLiquaidationPlanLoding.value
+                              buttontext:
+                                  liquidationPlanController
+                                      .isSaveLiquaidationPlanLoding
+                                      .value
                                   ? "Processing"
                                   : 'Save',
-                              buttonDecoration:
-                                  kButtonDecoration.copyWith(color: kMainColor),
+                              buttonDecoration: kButtonDecoration.copyWith(
+                                color: kMainColor,
+                              ),
                               onPressed: () {
                                 if (!liquidationPlanController
-                                    .isSaveLiquaidationPlanLoding.value) {
+                                    .isSaveLiquaidationPlanLoding
+                                    .value) {
                                   saveLiquidationPlanData();
                                 }
                               },
                             ),
-                            const SizedBox(
-                              height: 20.0,
-                            ),
+                            const SizedBox(height: 20.0),
                           ],
                         ),
                       ),
