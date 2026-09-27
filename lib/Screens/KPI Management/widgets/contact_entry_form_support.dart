@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:aeon_hrms/constant.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
@@ -91,21 +92,39 @@ abstract class ContactEntryFormState<T extends StatefulWidget>
     int? limit,
     int lines = 1,
     bool required = false,
+    bool readOnly = false,
   }) => Padding(
     padding: const EdgeInsets.only(bottom: 24),
     child: TextFormField(
       key: ValueKey('contact-form-$key'),
       controller: fields[key],
       decoration: fieldDecoration(label),
+      inputFormatters:
+          key == 'CONTACT_TYPE' || key == 'ACREAGE' || key == 'PINCODE'
+          ? [FilteringTextInputFormatter.digitsOnly]
+          : null,
       keyboardType: key == 'ORDER_VALUE'
           ? const TextInputType.numberWithOptions(decimal: true)
           : key == 'MOBILE_NO' || key == 'CUSTOMER_ID'
           ? TextInputType.phone
           : key == "STOCK_AVAILABLE"
           ? TextInputType.number
+          : key == "CONTACT_TYPE"
+          ? TextInputType.number
+          : key == "ACREAGE"
+          ? TextInputType.number
+          : key == "PINCODE"
+          ? TextInputType.number
           : null,
       maxLines: lines,
-      maxLength: limit,
+      readOnly: readOnly || key == 'PINCODE' || key == 'ADDRESS',
+      maxLength: key == 'PINCODE'
+          ? 6
+          : key == 'CONTACT_TYPE'
+          ? 10
+          : key == 'ACREAGE'
+          ? 2
+          : limit,
       buildCounter: (
         context, {
         required currentLength,
@@ -114,10 +133,18 @@ abstract class ContactEntryFormState<T extends StatefulWidget>
       }) => null,
       validator: (value) => required && (value?.trim().isEmpty ?? true)
           ? 'This field is required'
+          : key == 'PINCODE' &&
+                (value?.trim().isNotEmpty ?? false) &&
+                !RegExp(r'^\d{6}$').hasMatch(value!.trim())
+          ? 'Enter a valid 6-digit pincode'
           : key == 'CUSTOMER_ID' &&
                 (value?.trim().isNotEmpty ?? false) &&
                 !RegExp(r'^\d+$').hasMatch(value!.trim())
           ? 'Enter a numeric customer ID'
+          : key == 'CONTACT_TYPE' &&
+                (value?.trim().isNotEmpty ?? false) &&
+                !RegExp(r'^\d{10}$').hasMatch(value!.trim())
+          ? 'Enter a 10-digit number'
           : key == 'ORDER_VALUE' &&
                 (value?.trim().isNotEmpty ?? false) &&
                 !RegExp(r'^\d{1,16}(\.\d{1,2})?$').hasMatch(value!.trim())
@@ -134,6 +161,7 @@ abstract class ContactEntryFormState<T extends StatefulWidget>
     required Rx<T?> selected,
     required String? Function(T) itemLabel,
     required ValueChanged<T?> onChanged,
+    bool required = false,
   }) => Padding(
     padding: const EdgeInsets.only(bottom: 24),
     child: Obx(() {
@@ -143,6 +171,9 @@ abstract class ContactEntryFormState<T extends StatefulWidget>
         initialValue: selected.value,
         decoration: fieldDecoration(label),
         isExpanded: true,
+        validator: required
+            ? (value) => value == null ? 'Select $label' : null
+            : null,
         items: [
           DropdownMenuItem<T>(
             value: null,
@@ -163,23 +194,27 @@ abstract class ContactEntryFormState<T extends StatefulWidget>
     }),
   );
 
-  Widget productDropdown() => masterDropdown<ProductData>(
-    label: 'Product Name',
-    values: () => demoPlanController.productList,
-    selected: demoPlanController.productselectedValue,
-    itemLabel: (product) => product.productName,
-    onChanged: (value) => demoPlanController.productselectedValue.value = value,
-  );
+  Widget productDropdown({bool required = false}) =>
+      masterDropdown<ProductData>(
+        label: 'Product Name',
+        values: () => demoPlanController.productList,
+        selected: demoPlanController.productselectedValue,
+        itemLabel: (product) => product.productName,
+        onChanged: (value) =>
+            demoPlanController.productselectedValue.value = value,
+        required: required,
+      );
 
-  Widget cropDropdown() => masterDropdown<CropMast>(
+  Widget cropDropdown({bool required = false}) => masterDropdown<CropMast>(
     label: 'Crop',
     values: () => demoPlanController.cropList,
     selected: demoPlanController.selectedCrop,
     itemLabel: (crop) => crop.croPNAME,
     onChanged: (value) => demoPlanController.selectedCrop.value = value,
+    required: required,
   );
 
-  Widget stateDropdown() => masterDropdown<StateData>(
+  Widget stateDropdown({bool required = false}) => masterDropdown<StateData>(
     label: 'State',
     values: () => demoPlanController.stateList,
     selected: demoPlanController.selectedState,
@@ -199,29 +234,32 @@ abstract class ContactEntryFormState<T extends StatefulWidget>
         );
       }
     },
+    required: required,
   );
 
-  Widget districtDropdown() => masterDropdown<DistrictData>(
-    label: 'District',
-    values: () => demoPlanController.districtList,
-    selected: demoPlanController.selectedDistrict,
-    itemLabel: (district) => district.districTNAME,
-    onChanged: (value) {
-      demoPlanController.selectedDistrict.value = value;
-      demoPlanController.selectedTehsil.value = null;
-      demoPlanController.selectedvillage.value = null;
-      demoPlanController.tehsilList.clear();
-      demoPlanController.villageList.clear();
-      fields['PINCODE']!.clear();
-      if (value != null) {
-        demoPlanController.GetTehsilListByDistrictCodeandEmpCode(
-          value.districTCODE,
-        );
-      }
-    },
-  );
+  Widget districtDropdown({bool required = false}) =>
+      masterDropdown<DistrictData>(
+        label: 'District',
+        values: () => demoPlanController.districtList,
+        selected: demoPlanController.selectedDistrict,
+        itemLabel: (district) => district.districTNAME,
+        onChanged: (value) {
+          demoPlanController.selectedDistrict.value = value;
+          demoPlanController.selectedTehsil.value = null;
+          demoPlanController.selectedvillage.value = null;
+          demoPlanController.tehsilList.clear();
+          demoPlanController.villageList.clear();
+          fields['PINCODE']!.clear();
+          if (value != null) {
+            demoPlanController.GetTehsilListByDistrictCodeandEmpCode(
+              value.districTCODE,
+            );
+          }
+        },
+        required: required,
+      );
 
-  Widget tehsilDropdown() => masterDropdown<TehsilData>(
+  Widget tehsilDropdown({bool required = false}) => masterDropdown<TehsilData>(
     label: 'Tehsil',
     values: () => demoPlanController.tehsilList,
     selected: demoPlanController.selectedTehsil,
@@ -235,20 +273,23 @@ abstract class ContactEntryFormState<T extends StatefulWidget>
         demoPlanController.getVillageListByTehsilCode(value.tehsiLCODE);
       }
     },
+    required: required,
   );
 
-  Widget villageDropdown() => masterDropdown<VillageData>(
-    label: 'Village',
-    values: () => demoPlanController.villageList,
-    selected: demoPlanController.selectedvillage,
-    itemLabel: (village) => village.villagENAME,
-    onChanged: (value) {
-      demoPlanController.selectedvillage.value = value;
-      fields['PINCODE']!.text = value?.piNCODE?.toString() ?? '';
-    },
-  );
+  Widget villageDropdown({bool required = false}) =>
+      masterDropdown<VillageData>(
+        label: 'Village',
+        values: () => demoPlanController.villageList,
+        selected: demoPlanController.selectedvillage,
+        itemLabel: (village) => village.villagENAME,
+        onChanged: (value) {
+          demoPlanController.selectedvillage.value = value;
+          fields['PINCODE']!.text = value?.piNCODE?.toString() ?? '';
+        },
+        required: required,
+      );
 
-  Widget visitTypeDropdown() => Padding(
+  Widget visitTypeDropdown({ValueChanged<String?>? onChanged}) => Padding(
     padding: const EdgeInsets.only(bottom: 24),
     child: DropdownButtonFormField<String>(
       key: const ValueKey('visit-type-dropdown'),
@@ -260,10 +301,13 @@ abstract class ContactEntryFormState<T extends StatefulWidget>
         DropdownMenuItem(value: 'Retailer', child: Text('Retailer')),
         DropdownMenuItem(value: 'Distributor', child: Text('Distributor')),
       ],
-      onChanged: (value) => setState(() {
-        selectedVisitType = value;
-        fields['VISIT_TYPE']!.text = value ?? '';
-      }),
+      onChanged: (value) {
+        setState(() {
+          selectedVisitType = value;
+          fields['VISIT_TYPE']!.text = value ?? '';
+        });
+        onChanged?.call(value);
+      },
     ),
   );
 
@@ -288,7 +332,7 @@ abstract class ContactEntryFormState<T extends StatefulWidget>
       onTap: selectOtherDiscussProducts,
       child: InputDecorator(
         decoration: fieldDecoration(
-          'Other Product Discuss Name',
+          'Product Discuss Name',
           suffix: const Icon(Icons.arrow_drop_down),
         ),
         child: Text(
@@ -673,10 +717,6 @@ abstract class ContactEntryFormState<T extends StatefulWidget>
               padding: const EdgeInsets.fromLTRB(20, 32, 20, 24),
               children: [
                 ...fields,
-                const Text(
-                  'Saving will be available once the server connection is configured.',
-                  style: TextStyle(color: Colors.grey),
-                ),
                 const SizedBox(height: 12),
                 FilledButton(
                   style: FilledButton.styleFrom(

@@ -18,7 +18,39 @@ class _AddFarmerConnectivityEntryState
     extends ContactEntryFormState<AddFarmerConnectivityEntry> {
   @override
   Future<void> saveEntry() async {
-    if (saving || !formKey.currentState!.validate()) return;
+    if (saving) return;
+    final requiredSelections = <String, Object?>{
+      'Product Name': demoPlanController.productselectedValue.value,
+      'Crop': demoPlanController.selectedCrop.value,
+      'State': demoPlanController.selectedState.value,
+      'District': demoPlanController.selectedDistrict.value,
+      'Tehsil': demoPlanController.selectedTehsil.value,
+      'Village': demoPlanController.selectedvillage.value,
+    };
+    for (final selection in requiredSelections.entries) {
+      if (selection.value == null) {
+        formKey.currentState!.validate();
+        showMessage('Please select ${selection.key}.');
+        return;
+      }
+    }
+    if (!formKey.currentState!.validate()) return;
+    if (fields['OTHER_PRODUCT_DISCUSS_NAME']!.text.trim().isEmpty) {
+      showMessage('Select at least one discussed product.');
+      return;
+    }
+    if (followUpDate == null) {
+      showMessage('Select a follow-up date.');
+      return;
+    }
+    if (photo == null) {
+      showMessage('Upload a photo before saving.');
+      return;
+    }
+    if (position == null) {
+      showMessage('Capture your current location before saving.');
+      return;
+    }
     setState(() => saving = true);
 
     try {
@@ -87,7 +119,22 @@ class _AddFarmerConnectivityEntryState
       if (response.statusCode != null &&
           response.statusCode! >= 200 &&
           response.statusCode! < 300) {
-        showMessage('Farmer connectivity entry saved successfully.');
+        if (!mounted) return;
+        await showDialog<void>(
+          context: context,
+          builder: (dialogContext) => AlertDialog(
+            title: const Text('Success'),
+            content: const Text(
+              'Farmer connectivity entry saved successfully.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(),
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+        );
       } else {
         showMessage('Unable to save farmer connectivity entry.');
       }
@@ -110,29 +157,32 @@ class _AddFarmerConnectivityEntryState
   Widget build(BuildContext context) => buildContactEntryForm(
     title: 'Farmer Connectivity Entry',
     fields: [
-      productDropdown(),
-      cropDropdown(),
-      stateDropdown(),
-      districtDropdown(),
-      tehsilDropdown(),
-      villageDropdown(),
-      textField('FARMER_NAME', 'Farmer Name', limit: 1000),
-      textField('PINCODE', 'Pincode', limit: 6),
-      textField('CONTACT_TYPE', 'Contact Type', limit: 100),
-      // textField('PURPOSE', 'Purpose', limit: 250),
-      textField('ACREAGE', 'Acre', limit: 250),
-      textField('PRODUCT_DISCUSSED', 'Product Discussed', limit: 250),
+      productDropdown(required: true),
+      cropDropdown(required: true),
+      stateDropdown(required: true),
+      districtDropdown(required: true),
+      tehsilDropdown(required: true),
+      villageDropdown(required: true),
+      textField('FARMER_NAME', 'Farmer Name', limit: 1000, required: true),
+      textField('PINCODE', 'Pincode', limit: 6, required: true),
+      textField('CONTACT_TYPE', 'Contact Number', required: true),
+      textField('ACREAGE', 'Acres', required: true),
       otherProductDiscussDropdown(),
-      textField('FARMER_INTEREST', 'Farmer Interest', limit: 100),
+      textField(
+        'FARMER_INTEREST',
+        'Farmer Interest',
+        limit: 100,
+        required: true,
+      ),
       followUpDateField(),
-      textField('REMARKS', 'Remarks', limit: 1000, lines: 4),
+      textField('REMARKS', 'Remarks', limit: 1000, lines: 4, required: true),
       photoUploadField(),
       SizedBox(height: 10),
       locationCaptureButton(),
       SizedBox(height: 15),
       locationReadout(),
       SizedBox(height: 15),
-      textField('ADDRESS', 'Address', lines: 3),
+      textField('ADDRESS', 'Address', lines: 3, required: true),
     ],
   );
 }

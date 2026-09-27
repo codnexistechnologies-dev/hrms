@@ -8,6 +8,59 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
 
 void main() {
+  testWidgets('farmer contact type and acreage accept limited digits only', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(800, 4000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(
+      const MaterialApp(home: AddFarmerConnectivityEntry()),
+    );
+    final state = tester
+        .state<ContactEntryFormState<AddFarmerConnectivityEntry>>(
+          find.byType(AddFarmerConnectivityEntry),
+        );
+
+    await tester.enterText(
+      find.byKey(const ValueKey('contact-form-CONTACT_TYPE')),
+      '12a345678901',
+    );
+    expect(state.fields['CONTACT_TYPE']!.text, '1234567890');
+
+    await tester.enterText(
+      find.byKey(const ValueKey('contact-form-ACREAGE')),
+      '1a234',
+    );
+    expect(state.fields['ACREAGE']!.text, '12');
+
+    final pincode = tester.widget<TextField>(
+      find.descendant(
+        of: find.byKey(const ValueKey('contact-form-PINCODE')),
+        matching: find.byType(TextField),
+      ),
+    );
+    expect(pincode.readOnly, true);
+    expect(pincode.maxLength, 6);
+    final address = tester.widget<TextField>(
+      find.descendant(
+        of: find.byKey(const ValueKey('contact-form-ADDRESS')),
+        matching: find.byType(TextField),
+      ),
+    );
+    expect(address.readOnly, true);
+    state.fields['PINCODE']!.text = '12345';
+    state.formKey.currentState!.validate();
+    await tester.pump();
+    expect(find.text('Enter a valid 6-digit pincode'), findsOneWidget);
+
+    state.fields['PINCODE']!.text = '123456';
+    state.formKey.currentState!.validate();
+    await tester.pump();
+    expect(find.text('Enter a valid 6-digit pincode'), findsNothing);
+  });
+
   testWidgets('farmer form contains schema fields without sample values', (
     tester,
   ) async {
@@ -75,11 +128,41 @@ void main() {
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
   });
 
+  testWidgets('farmer save shows a message for an unselected dropdown', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(800, 2200);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(
+      const MaterialApp(home: AddFarmerConnectivityEntry()),
+    );
+    final state = tester
+        .state<ContactEntryFormState<AddFarmerConnectivityEntry>>(
+          find.byType(AddFarmerConnectivityEntry),
+        );
+    state.demoPlanController.productselectedValue.value = null;
+
+    final saveButton = find.widgetWithText(FilledButton, 'Save');
+    await tester.scrollUntilVisible(
+      saveButton,
+      250,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.tap(saveButton);
+    await tester.pump();
+
+    expect(find.text('Please select Product Name.'), findsOneWidget);
+  });
+
   testWidgets('retailer order defaults to No and validates decimal precision', (
     tester,
   ) async {
     await tester.pumpWidget(
-      const MaterialApp(home: AddRetailerDistributorVisitEntry()),
+      const MaterialApp(
+        home: AddRetailerDistributorVisitEntry(loadContactsOnOpen: false),
+      ),
     );
     final visitType = find.byKey(const ValueKey('visit-type-dropdown'));
     await tester.tap(visitType);
@@ -112,11 +195,17 @@ void main() {
     );
     await tester.ensureVisible(value);
     final state = tester.state<FormState>(find.byType(Form));
-    expect(state.validate(), true);
-    await tester.enterText(value, '123.456');
-    expect(state.validate(), false);
-    await tester.enterText(value, '123.45');
-    expect(state.validate(), true);
+    final orderValueFormField = find.ancestor(
+      of: value,
+      matching: find.byType(TextFormField),
+    );
+    final orderValueField = tester.widget<TextFormField>(orderValueFormField);
+    expect(orderValueField.validator?.call(''), 'This field is required');
+    expect(
+      orderValueField.validator?.call('123.456'),
+      'Enter up to 16 digits and 2 decimal places',
+    );
+    expect(orderValueField.validator?.call('123.45'), isNull);
   });
 
   testWidgets('retailer form contains its complete field set', (tester) async {
@@ -125,13 +214,16 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
     await tester.pumpWidget(
-      const MaterialApp(home: AddRetailerDistributorVisitEntry()),
+      const MaterialApp(
+        home: AddRetailerDistributorVisitEntry(loadContactsOnOpen: false),
+      ),
     );
 
     for (final fieldKey in [
       'master-field-Product Name',
       'visit-type-dropdown',
-      'contact-form-CONTACT_PERSON',
+      'contact-person-dropdown',
+      'contact-form-MOBILE_NO',
       'order-taken-dropdown',
       'contact-form-STOCK_AVAILABLE',
       'contact-form-PRODUCT_DISCUSSED',
@@ -140,9 +232,32 @@ void main() {
       'contact-form-SCHEME_DISCUSSED',
       'contact-form-MARKET_FEEDBACK',
       'contact-form-REMARKS',
+      'contact-form-ADDRESS',
     ]) {
       expect(find.byKey(ValueKey(fieldKey)), findsOneWidget);
     }
+    for (final fieldKey in [
+      'contact-form-STOCK_AVAILABLE',
+      'contact-form-PRODUCT_DISCUSSED',
+      'contact-form-COMPETITOR_PRODUCT',
+      'contact-form-SCHEME_DISCUSSED',
+      'contact-form-MARKET_FEEDBACK',
+      'contact-form-REMARKS',
+      'contact-form-ADDRESS',
+      'contact-form-MOBILE_NO',
+    ]) {
+      expect(
+        tester.widget<TextFormField>(find.byKey(ValueKey(fieldKey))).validator,
+        isNotNull,
+      );
+    }
+    final mobileTextField = tester.widget<TextField>(
+      find.descendant(
+        of: find.byKey(const ValueKey('contact-form-MOBILE_NO')),
+        matching: find.byType(TextField),
+      ),
+    );
+    expect(mobileTextField.readOnly, true);
     for (final fieldKey in [
       'master-field-Crop',
       'master-field-State',
@@ -150,11 +265,9 @@ void main() {
       'master-field-Tehsil',
       'master-field-Village',
       'contact-form-PINCODE',
-      'contact-form-MOBILE_NO',
       'contact-form-CUSTOMER_ID',
       'contact-form-PURPOSE',
       'contact-form-UPLOAD_FILE',
-      'contact-form-ADDRESS',
     ]) {
       expect(find.byKey(ValueKey(fieldKey)), findsNothing);
     }
@@ -173,7 +286,9 @@ void main() {
     tester,
   ) async {
     await tester.pumpWidget(
-      const MaterialApp(home: AddRetailerDistributorVisitEntry()),
+      const MaterialApp(
+        home: AddRetailerDistributorVisitEntry(loadContactsOnOpen: false),
+      ),
     );
     final visitType = find.byKey(const ValueKey('visit-type-dropdown'));
     await tester.scrollUntilVisible(
@@ -204,7 +319,9 @@ void main() {
       ProductData(productCode: 202, productName: 'Product Beta'),
     ]);
     await tester.pumpWidget(
-      const MaterialApp(home: AddRetailerDistributorVisitEntry()),
+      const MaterialApp(
+        home: AddRetailerDistributorVisitEntry(loadContactsOnOpen: false),
+      ),
     );
 
     expect(
