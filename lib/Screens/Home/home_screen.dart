@@ -4,7 +4,7 @@ import 'dart:async';
 
 import 'package:aeon_hrms/Screens/Employee%20management/controller/employee_controller.dart';
 import 'package:aeon_hrms/Screens/Employee%20management/view/employee_card_screen.dart';
-import 'package:aeon_hrms/Screens/Geolocation/GeoLocationList.dart';
+import 'package:aeon_hrms/Screens/Training%20Modules/view/training_modules_screen.dart';
 import 'package:aeon_hrms/Screens/Home/controller/HomeController.dart';
 import 'package:aeon_hrms/Screens/KPI%20Management/KpiListNew.dart';
 import 'package:aeon_hrms/Screens/KPI/view/KpiStatusMonthly.dart';
@@ -217,7 +217,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   bottomLeft: Radius.circular(30.0),
                   bottomRight: Radius.circular(30.0),
                 ),
-                color: kMainColor,
+                color: Color.fromARGB(255, 171, 224, 129),
               ),
               child: Column(
                 children: [
@@ -724,7 +724,8 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         ),
                         child: ListTile(
-                          onTap: () => GeoLocationList().launch(context),
+                          onTap: () =>
+                              const TrainingModulesScreen().launch(context),
                           leading: Image.asset('images/Training.png'),
                           title: Text(
                             'Training',

@@ -5,6 +5,7 @@ import 'package:aeon_hrms/Screens/Splash%20Screen/splash_screen.dart';
 import 'package:aeon_hrms/Utility/shared_preferences_service.dart';
 import 'package:aeon_hrms/background_service/background_service.dart';
 import 'package:aeon_hrms/component/storage_helper.dart';
+import 'package:aeon_hrms/component/patch_update_notice.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
@@ -57,17 +58,24 @@ Future<void> main() async {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
+  static final GlobalKey<NavigatorState> _navigatorKey =
+      GlobalKey<NavigatorState>();
+
   @override
   Widget build(BuildContext context) {
     return Provider(
       create: (_) => UserDetailsRepository(),
       child: GetMaterialApp(
+        navigatorKey: _navigatorKey,
         debugShowCheckedModeBanner: false,
         title: 'Welcome to HRMS',
         builder: (context, child) => SafeArea(
           top: false,
           bottom: true,
-          child: child ?? const SizedBox.shrink(),
+          child: PatchUpdateNotice(
+            navigatorKey: _navigatorKey,
+            child: child ?? const SizedBox.shrink(),
+          ),
         ),
         home: SplashScreen(),
       ),

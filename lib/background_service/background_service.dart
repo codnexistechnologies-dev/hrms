@@ -25,12 +25,18 @@ final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
     FlutterLocalNotificationsPlugin();
 
 Future<void> initializeBackgroundServices() async {
+  // Tracking recovery must not depend on WorkManager scheduling succeeding.
+  try {
+    await initializeService();
+  } catch (error, stackTrace) {
+    debugPrint('Location service initialization failed: $error');
+    debugPrintStack(stackTrace: stackTrace);
+  }
   try {
     final dbHelper = DatabaseHelper();
     dbHelper.resetErrorCounter();
     await Workmanager().initialize(callbackDispatcher);
     await rescheduleTasks();
-    await initializeService();
   } catch (error, stackTrace) {
     debugPrint('Background service initialization failed: $error');
     debugPrintStack(stackTrace: stackTrace);
@@ -301,20 +307,102 @@ void onStart(ServiceInstance service) async {
     service.setAsForegroundService();
   }
 
-  service.on('stopService').listen((event) {
-    stopLocationTracking();
-    service.stopSelf();
+  service.on('stopService').listen((event) async {
+    await stopLocationTracking();
+    await service.stopSelf();
   });
   service.on('startTracking').listen((event) => startLocationTracking());
   service.on('stopTracking').listen((event) async {
     await stopLocationTracking();
     service.stopSelf();
   });
+  String? restartRequest;
+  Future<void>? restartPause;
+  Timer? restartWatchdog;
+  Future<void> restoreTracking() async {
+    try {
+      await restartPause;
+    } catch (_) {
+      // Resume after a failed persistence attempt without starting a second
+      // stream while cancellation/draining of the old one is still in progress.
+    }
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.reload();
+    if (prefs.getBool(locationTrackingActiveKey) == true) {
+      startLocationTracking();
+    }
+  }
+
+  service.on('cancelPatchRestart').listen((event) async {
+    restartRequest = null;
+    restartWatchdog?.cancel();
+    await restoreTracking();
+  });
+  service.on('preparePatchRestart').listen((event) async {
+    final requestId = event?['requestId'] as String?;
+    if (requestId == null || restartRequest != null) return;
+    restartRequest = requestId;
+    // If the UI/native restart disappears, never leave GPS paused indefinitely.
+    restartWatchdog = Timer(const Duration(seconds: 30), () async {
+      restartRequest = null;
+      await restoreTracking();
+    });
+    try {
+      restartPause = pauseLocationTrackingForRestart();
+      await restartPause;
+      if (restartRequest != requestId) return;
+      service.invoke('patchRestartReady', {
+        'requestId': requestId,
+        'ready': true,
+      });
+      // Keep the foreground service alive until the process restarts. Preserve
+      // locationTrackingActiveKey; an update is not an attendance check-out.
+    } catch (error) {
+      if (restartRequest != requestId) return;
+      restartRequest = null;
+      restartWatchdog?.cancel();
+      await restoreTracking();
+      service.invoke('patchRestartReady', {
+        'requestId': requestId,
+        'ready': false,
+      });
+    }
+  });
   final prefs = await SharedPreferences.getInstance();
   await prefs.reload();
-  if (prefs.getBool(locationTrackingActiveKey) == true) {
+  if (prefs.getBool(locationTrackingActiveKey) == true &&
+      restartRequest == null) {
     debugPrint('[Location] Foreground service started; subscribing to GPS');
     startLocationTracking();
+  }
+}
+
+Future<void> prepareLocationForPatchRestart() async {
+  final service = FlutterBackgroundService();
+  if (!await service.isRunning()) return;
+  final requestId = DateTime.now().microsecondsSinceEpoch.toString();
+  final ready = Completer<bool>();
+  final subscription = service.on('patchRestartReady').listen((event) {
+    if (event?['requestId'] == requestId && !ready.isCompleted) {
+      ready.complete(event?['ready'] == true);
+    }
+  });
+  try {
+    service.invoke('preparePatchRestart', {'requestId': requestId});
+    if (!await ready.future.timeout(const Duration(seconds: 20))) {
+      throw StateError('Location service could not safely prepare for restart');
+    }
+  } finally {
+    await subscription.cancel();
+  }
+}
+
+Future<void> resumeLocationAfterFailedRestart() async {
+  final service = FlutterBackgroundService();
+  if (await service.isRunning()) {
+    service.invoke('cancelPatchRestart');
+  } else {
+    await initializeService();
   }
 }
 

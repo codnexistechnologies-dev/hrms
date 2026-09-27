@@ -3,7 +3,6 @@ import 'dart:convert';
 
 import 'package:aeon_hrms/Data/Model/UserDetails.dart';
 import 'package:aeon_hrms/Data/Repositories/UserDetails_repository.dart';
-import 'package:aeon_hrms/Screens/Authentication/forgot_password.dart';
 import 'package:aeon_hrms/Screens/Home/Customshape.dart';
 import 'package:aeon_hrms/Screens/Home/home_screen.dart';
 import 'package:aeon_hrms/Utility/MLImage.dart';

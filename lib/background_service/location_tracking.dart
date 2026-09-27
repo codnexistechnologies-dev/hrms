@@ -19,6 +19,9 @@ const String _lastTimestampKey = 'nia_last_logged_timestamp';
 
 StreamSubscription<Position>? _positionSubscription;
 bool _isProcessingPosition = false;
+bool _acceptPositions = false;
+Completer<void>? _positionWriteFinished;
+bool _lastWriteFailed = false;
 ServiceInstance? _activeService;
 
 void setTrackingServiceInstance(ServiceInstance? service) {
@@ -34,6 +37,8 @@ Future<void> resetLocationTrackingCache() async {
 }
 
 void startLocationTracking() {
+  if (_acceptPositions && _positionSubscription != null) return;
+  _acceptPositions = true;
   _positionSubscription?.cancel();
   debugPrint('[Location] Starting GPS position stream');
   const locationSettings = LocationSettings(
@@ -63,8 +68,19 @@ void startLocationTracking() {
 }
 
 Future<void> stopLocationTracking() async {
+  _acceptPositions = false;
   await _positionSubscription?.cancel();
   _positionSubscription = null;
+  // Cancellation alone does not await asynchronous stream callbacks.
+  await _positionWriteFinished?.future;
+}
+
+Future<void> pauseLocationTrackingForRestart() async {
+  final hadPendingWrite = _isProcessingPosition;
+  await stopLocationTracking();
+  if (hadPendingWrite && _lastWriteFailed) {
+    throw StateError('Location could not be saved before restart');
+  }
 }
 
 Future<void> _determinePosition() async {
@@ -90,8 +106,11 @@ Future<void> _determinePosition() async {
 }
 
 Future<void> _handleIncomingPosition(Position position) async {
-  if (_isProcessingPosition) return;
+  if (!_acceptPositions || _isProcessingPosition) return;
   _isProcessingPosition = true;
+  _lastWriteFailed = false;
+  final completed = Completer<void>();
+  _positionWriteFinished = completed;
   try {
     final shouldLog = await _shouldLogPosition(position);
     if (!shouldLog) {
@@ -103,7 +122,7 @@ Future<void> _handleIncomingPosition(Position position) async {
       final placemarks = await placemarkFromCoordinates(
         position.latitude,
         position.longitude,
-      );
+      ).timeout(const Duration(seconds: 5));
       if (placemarks.isNotEmpty) {
         final p = placemarks.first;
         address =
@@ -123,6 +142,7 @@ Future<void> _handleIncomingPosition(Position position) async {
       );
       loggedSuccessfully = true;
     } catch (e) {
+      _lastWriteFailed = true;
       debugPrint('[Location] Point could not be saved: $e');
     } finally {
       if (loggedSuccessfully) {
@@ -136,9 +156,14 @@ Future<void> _handleIncomingPosition(Position position) async {
       unawaited(_updateServiceNotification(position: position));
     }
   } catch (e) {
+    _lastWriteFailed = true;
     debugPrint('Error handling position: $e');
   } finally {
     _isProcessingPosition = false;
+    completed.complete();
+    if (identical(_positionWriteFinished, completed)) {
+      _positionWriteFinished = null;
+    }
   }
 }
 
@@ -155,14 +180,16 @@ Future<void> _persistLocationPoint(
 
   final DateTime now = DateTime.now();
   String two(int n) => n.toString().padLeft(2, '0');
-  final String currentDate =
-      '${now.year}-${two(now.month)}-${two(now.day)}';
-  final String currentDateTime = '$currentDate '
+  final String currentDate = '${now.year}-${two(now.month)}-${two(now.day)}';
+  final String currentDateTime =
+      '$currentDate '
       '${two(now.hour)}:${two(now.minute)}:${two(now.second)}';
 
   String mobileNetwork = '';
   try {
-    mobileNetwork = await Utility.checkNetworkStatus();
+    mobileNetwork = await Utility.checkNetworkStatus().timeout(
+      const Duration(seconds: 3),
+    );
   } catch (error) {
     debugPrint('[Location] Network status unavailable: $error');
   }
