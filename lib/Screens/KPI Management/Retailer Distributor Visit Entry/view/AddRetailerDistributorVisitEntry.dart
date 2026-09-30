@@ -1,9 +1,10 @@
 import 'dart:async';
-import 'dart:developer';
+import 'dart:convert';
 
 import 'package:dio/dio.dart' as dio;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:aeon_hrms/Screens/KPI%20Management/Demo%20Plan/model/ProductMasterListModel.dart';
 import 'package:aeon_hrms/Utility/api_constants.dart';
 import 'package:aeon_hrms/Utility/shared_preferences_service.dart';
 
@@ -25,6 +26,9 @@ class AddRetailerDistributorVisitEntry extends StatefulWidget {
 class _AddRetailerDistributorVisitEntryState
     extends ContactEntryFormState<AddRetailerDistributorVisitEntry> {
   List<_ContactPerson> contactPeople = [];
+  final Map<ProductData, int> selectedOrderProducts = {};
+  final Map<String, TextEditingController> orderValueControllers = {};
+  final Map<String, TextEditingController> stockAvailableControllers = {};
   _ContactPerson? selectedContactPerson;
   bool loadingContactPeople = true;
   final contactLoadCancelToken = dio.CancelToken();
@@ -43,6 +47,12 @@ class _AddRetailerDistributorVisitEntryState
   @override
   void dispose() {
     contactLoadCancelToken.cancel('Retailer visit form closed.');
+    for (final controller in orderValueControllers.values) {
+      controller.dispose();
+    }
+    for (final controller in stockAvailableControllers.values) {
+      controller.dispose();
+    }
     super.dispose();
   }
 
@@ -143,13 +153,233 @@ class _AddRetailerDistributorVisitEntryState
     ),
   );
 
+  Widget orderProductsField() => FormField<Map<ProductData, int>>(
+    initialValue: selectedOrderProducts,
+    validator: (value) =>
+        value == null || value.isEmpty ? 'Select at least one product' : null,
+    builder: (field) => Padding(
+      padding: const EdgeInsets.only(bottom: 24),
+      child: InkWell(
+        key: const ValueKey('order-products-picker'),
+        onTap: () async {
+          final products = demoPlanController.productList
+              .where(
+                (product) => product.productName?.trim().isNotEmpty ?? false,
+              )
+              .toList();
+          final selection = Map<ProductData, int>.from(selectedOrderProducts);
+          final result = await showModalBottomSheet<Map<ProductData, int>>(
+            context: context,
+            isScrollControlled: true,
+            useSafeArea: true,
+            backgroundColor: Colors.white,
+            builder: (sheetContext) => StatefulBuilder(
+              builder: (context, setSheetState) => SizedBox(
+                height: MediaQuery.sizeOf(context).height * 0.78,
+                child: Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
+                      child: Row(
+                        children: [
+                          const Expanded(
+                            child: Text(
+                              'Product Name',
+                              style: TextStyle(fontWeight: FontWeight.w700),
+                            ),
+                          ),
+                          Text('${selection.length} selected'),
+                        ],
+                      ),
+                    ),
+                    Expanded(
+                      child: products.isEmpty
+                          ? const Center(child: Text('No products available'))
+                          : ListView.separated(
+                              itemCount: products.length,
+                              separatorBuilder: (context, index) =>
+                                  const Divider(height: 1),
+                              itemBuilder: (context, index) {
+                                final product = products[index];
+                                final productId =
+                                    product.productCode?.toString() ??
+                                    product.productName!;
+                                final isSelected = selection.containsKey(
+                                  product,
+                                );
+                                void updateSelection(bool? checked) {
+                                  setSheetState(() {
+                                    if (checked ?? false) {
+                                      selection[product] = 1;
+                                    } else {
+                                      selection.remove(product);
+                                    }
+                                  });
+                                }
+
+                                return Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 8,
+                                  ),
+                                  child: Column(
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Expanded(
+                                            child: InkWell(
+                                              onTap: () =>
+                                                  updateSelection(!isSelected),
+                                              child: Padding(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      vertical: 12,
+                                                    ),
+                                                child: Text(
+                                                  product.productName!,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                          Checkbox(
+                                            activeColor: const Color(
+                                              0xFF567DF4,
+                                            ),
+                                            key: ValueKey(
+                                              'order-product-${product.productCode}',
+                                            ),
+                                            value: isSelected,
+                                            onChanged: updateSelection,
+                                          ),
+                                        ],
+                                      ),
+                                      if (isSelected)
+                                        Padding(
+                                          padding: const EdgeInsets.only(
+                                            bottom: 8,
+                                          ),
+                                          child: Row(
+                                            children: [
+                                              Expanded(
+                                                child: TextField(
+                                                  key: ValueKey(
+                                                    'order-product-$productId-available-stock',
+                                                  ),
+                                                  controller:
+                                                      stockAvailableControllers
+                                                          .putIfAbsent(
+                                                            productId,
+                                                            () =>
+                                                                TextEditingController(),
+                                                          ),
+                                                  keyboardType:
+                                                      const TextInputType.numberWithOptions(
+                                                        decimal: true,
+                                                      ),
+                                                  decoration:
+                                                      const InputDecoration(
+                                                        labelText:
+                                                            'Available Stock',
+                                                        isDense: true,
+                                                        border:
+                                                            OutlineInputBorder(),
+                                                      ),
+                                                ),
+                                              ),
+                                              const SizedBox(width: 8),
+                                              Expanded(
+                                                child: TextField(
+                                                  key: ValueKey(
+                                                    'order-product-$productId-order-value',
+                                                  ),
+                                                  controller: orderValueControllers
+                                                      .putIfAbsent(
+                                                        productId,
+                                                        () =>
+                                                            TextEditingController(),
+                                                      ),
+                                                  keyboardType:
+                                                      const TextInputType.numberWithOptions(
+                                                        decimal: true,
+                                                      ),
+                                                  decoration:
+                                                      const InputDecoration(
+                                                        labelText: 'Order Value(In lakhs)',
+                                                        isDense: true,
+                                                        border:
+                                                            OutlineInputBorder(),
+                                                      ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                );
+                              },
+                            ),
+                    ),
+                    const Divider(height: 1),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
+                      child: Row(
+                        children: [
+                          TextButton(
+                            onPressed: () => setSheetState(selection.clear),
+                            child: const Text('Clear'),
+                          ),
+                          const Spacer(),
+                          FilledButton(
+                            style: FilledButton.styleFrom(
+                              backgroundColor: const Color(0xFF567DF4),
+                            ),
+                            onPressed: () => Navigator.pop(
+                              sheetContext,
+                              Map<ProductData, int>.from(selection),
+                            ),
+                            child: const Text('Done'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+          if (result != null && mounted) {
+            setState(() {
+              selectedOrderProducts
+                ..clear()
+                ..addAll(result);
+            });
+            field.didChange(Map<ProductData, int>.from(result));
+          }
+        },
+        child: InputDecorator(
+          decoration: fieldDecoration('Product Name').copyWith(
+            suffixIcon: const Icon(Icons.arrow_drop_down),
+            errorText: field.errorText,
+          ),
+          child: Text(
+            key: const ValueKey('order-products-summary'),
+            selectedOrderProducts.isEmpty
+                ? 'Select products'
+                : selectedOrderProducts.entries
+                      .map((entry) => entry.key.productName!)
+                      .join(', '),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ),
+    ),
+  );
+
   @override
   Future<void> saveEntry() async {
     if (saving || !formKey.currentState!.validate()) return;
-    if (fields['OTHER_PRODUCT_DISCUSS_NAME']!.text.trim().isEmpty) {
-      showMessage('Select at least one discussed product.');
-      return;
-    }
     if (followUpDate == null) {
       showMessage('Select a follow-up date.');
       return;
@@ -162,21 +392,62 @@ class _AddRetailerDistributorVisitEntryState
       showMessage('Please capture your current location before saving.');
       return;
     }
-    if (demoPlanController.productselectedValue.value == null) {
-      showMessage('Please select a product before saving.');
-      return;
-    }
     setState(() => saving = true);
 
     try {
-      final selectedProduct = demoPlanController.productselectedValue.value;
+      final selectedOrderProductsList = selectedOrderProducts.entries.toList();
+      final orderProductNames = selectedOrderProductsList
+          .map((entry) => entry.key.productName)
+          .whereType<String>()
+          .join(',');
+      final orderProductCodes = selectedOrderProductsList
+          .map((entry) => entry.key.productCode?.toString())
+          .whereType<String>()
+          .join(',');
+      final orderProductQuantities = selectedOrderProductsList
+          .map((_) => '1')
+          .join(',');
+      final orderValues = selectedOrderProductsList
+          .map(
+            (entry) =>
+                orderValueControllers[entry.key.productCode?.toString() ??
+                        entry.key.productName!]
+                    ?.text
+                    .trim() ??
+                '',
+          )
+          .join(',');
+      final stockAvailableValues = selectedOrderProductsList
+          .map(
+            (entry) =>
+                stockAvailableControllers[entry.key.productCode?.toString() ??
+                        entry.key.productName!]
+                    ?.text
+                    .trim() ??
+                '',
+          )
+          .join(',');
+      final productDetailsJson = jsonEncode(
+        selectedOrderProductsList.map((entry) {
+          final productId =
+              entry.key.productCode?.toString() ?? entry.key.productName!;
+
+          return {
+            'PRODUCT_CODE': entry.key.productCode,
+            'STOCK_AVAILABLE': int.tryParse(
+              stockAvailableControllers[productId]?.text.trim() ?? '',
+            ),
+            'ORDER_VALUE': num.tryParse(
+              orderValueControllers[productId]?.text.trim() ?? '',
+            ),
+          };
+        }).toList(),
+      );
       final image = photo;
       final formData = dio.FormData.fromMap({
-        'STOCK_AVAILABLE': fields['STOCK_AVAILABLE']!.text.trim(),
-        'ORDER_VALUE':
-            orderTaken && fields['ORDER_VALUE']!.text.trim().isNotEmpty
-            ? fields['ORDER_VALUE']!.text.trim()
-            : '0',
+        'STOCK_AVAILABLE': orderTaken ? stockAvailableValues : '',
+        'ORDER_VALUE': orderTaken ? orderValues : '0',
+        'PRODUCT_DETAILS': orderTaken ? productDetailsJson : '[]',
         'IMAGE_FILE': image == null
             ? ''
             : await dio.MultipartFile.fromFile(
@@ -201,9 +472,10 @@ class _AddRetailerDistributorVisitEntryState
         'MOBILE_NO': selectedContactPerson?.mobileNo ?? '',
         'ADDRESS': fields['ADDRESS']!.text.trim(),
         'ORDER_TAKEN': orderTaken ? 'Yes' : 'No',
-        'PRODUCT_NAME': selectedProduct?.productName ?? '',
+        'PRODUCT_NAME': orderTaken ? orderProductNames : '',
         'COMPETITOR_PRODUCT': fields['COMPETITOR_PRODUCT']!.text.trim(),
-        'PRODUCT_CODE': selectedProduct?.productCode?.toString() ?? '',
+        'PRODUCT_CODE': orderTaken ? orderProductCodes : '',
+        'PRODUCT_QUANTITY': orderTaken ? orderProductQuantities : '',
       });
 
       final response = await dio.Dio().post(
@@ -280,23 +552,7 @@ class _AddRetailerDistributorVisitEntryState
           readOnly: true,
         ),
       orderTakenDropdown(),
-      if (orderTaken) ...[
-        productDropdown(required: true),
-        textField(
-          'ORDER_VALUE',
-          'Order Value(In lakh)',
-          limit: 19,
-          required: true,
-        ),
-      ],
-      textField(
-        'STOCK_AVAILABLE',
-        'Stock Available(Inventory)',
-        limit: 250,
-        required: true,
-      ),
-
-      otherProductDiscussDropdown(),
+      if (orderTaken) ...[orderProductsField()],
       textField(
         'SCHEME_DISCUSSED',
         'Scheme Discussed',

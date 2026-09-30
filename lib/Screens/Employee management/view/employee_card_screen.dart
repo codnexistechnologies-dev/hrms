@@ -254,8 +254,8 @@ class EmployeeCardPreview extends StatelessWidget {
                 children: [
                   Image.asset(
                     'images/company_card_logo.png',
-                    height: 58,
-                    width: 230,
+                    height: 65,
+                    width: 260,
                     fit: BoxFit.contain,
                   ),
                   const SizedBox(height: 5),
@@ -263,9 +263,10 @@ class EmployeeCardPreview extends StatelessWidget {
                     ClipOval(
                       child: Image.network(
                         '${ApiConstant.baseUrl}/Images/$photo',
-                        height: 93,
-                        width: 93,
+                        height: 92,
+                        width: 92,
                         fit: BoxFit.cover,
+                        alignment: Alignment.topCenter,
                         errorBuilder: (_, __, ___) => _photoPlaceholder(),
                       ),
                     )
@@ -343,9 +344,9 @@ class EmployeeCardPreview extends StatelessWidget {
                     ),
                   ),
                   const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 4),
+                    padding: EdgeInsets.symmetric(horizontal: 5),
                     child: Text(
-                      '* This card must be carried during duty hours and produced on demand to the designated authority',
+                      '* This card must be carried during duty hours and produced on \ndemand to the designated authority',
                       textAlign: TextAlign.center,
                       maxLines: 3,
                       softWrap: true,
@@ -446,12 +447,13 @@ class EmployeeCardPreview extends StatelessWidget {
   Widget _photoPlaceholder() => ClipOval(
     child: Image.network(
       '${ApiConstant.imageUrl}/${IMAGES}/${_value(employee.emPPICT, '')}',
-      height: 93,
-      width: 93,
+      height: 100,
+      width: 100,
       fit: BoxFit.cover,
+      alignment: Alignment.topCenter,
       errorBuilder: (_, __, ___) => Container(
-        height: 93,
-        width: 93,
+        height: 100,
+        width: 100,
         color: Colors.white,
         alignment: Alignment.center,
         child: const Icon(Icons.person, size: 52, color: Colors.grey),

@@ -3,6 +3,7 @@
 class ApiConstant {
   // static const String baseUrl = "https://api.careplusco.in/";
   static const String baseUrl = "http://160.187.87.76:83";
+  // static const String baseUrl = "http://192.168.31.115:5165";
   static const String imageUrl = "http://160.187.87.76:82";
 
   // static const String getImage =

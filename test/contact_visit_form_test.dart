@@ -8,7 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
 
 void main() {
-  testWidgets('farmer contact type and acreage accept limited digits only', (
+  testWidgets('farmer contact accepts digits and acreage accepts decimals', (
     tester,
   ) async {
     tester.view.physicalSize = const Size(800, 4000);
@@ -31,9 +31,19 @@ void main() {
 
     await tester.enterText(
       find.byKey(const ValueKey('contact-form-ACREAGE')),
-      '1a234',
+      '123.45',
     );
-    expect(state.fields['ACREAGE']!.text, '12');
+    expect(state.fields['ACREAGE']!.text, '123.45');
+    await tester.enterText(
+      find.byKey(const ValueKey('contact-form-ACREAGE')),
+      '123.45.6',
+    );
+    expect(state.fields['ACREAGE']!.text, '123.45');
+    await tester.enterText(
+      find.byKey(const ValueKey('contact-form-ACREAGE')),
+      '12a3',
+    );
+    expect(state.fields['ACREAGE']!.text, '123.45');
 
     final pincode = tester.widget<TextField>(
       find.descendant(
@@ -186,10 +196,12 @@ void main() {
       ),
       findsNothing,
     );
+    expect(find.byKey(const ValueKey('order-products-picker')), findsNothing);
     await tester.tap(order);
     await tester.pumpAndSettle();
     await tester.tap(find.text('Yes').last);
     await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('order-products-picker')), findsOneWidget);
     final value = find.byWidgetPredicate(
       (w) => w is TextField && w.decoration?.labelText == 'Order Value',
     );
@@ -220,7 +232,6 @@ void main() {
     );
 
     for (final fieldKey in [
-      'master-field-Product Name',
       'visit-type-dropdown',
       'contact-person-dropdown',
       'contact-form-MOBILE_NO',
@@ -324,10 +335,6 @@ void main() {
       ),
     );
 
-    expect(
-      find.byKey(const ValueKey('master-field-Product Name')),
-      findsOneWidget,
-    );
     final picker = find.byKey(const ValueKey('other-product-discuss-picker'));
     await tester.ensureVisible(picker);
     await tester.tap(picker);
@@ -343,6 +350,84 @@ void main() {
           .widget<Text>(
             find.byKey(const ValueKey('other-product-discuss-summary')),
           )
+          .data,
+      'Product Alpha, Product Beta',
+    );
+  });
+
+  testWidgets('retailer order product picker supports multi-select', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(800, 1600);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final controller = Get.put(DemoPlanController());
+    controller.productList.assignAll([
+      ProductData(productCode: 101, productName: 'Product Alpha'),
+      ProductData(productCode: 202, productName: 'Product Beta'),
+    ]);
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: AddRetailerDistributorVisitEntry(loadContactsOnOpen: false),
+      ),
+    );
+
+    final order = find.byKey(const ValueKey('order-taken-dropdown'));
+    await tester.tap(order);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Yes').last);
+    await tester.pumpAndSettle();
+
+    final picker = find.byKey(const ValueKey('order-products-picker'));
+    expect(picker, findsOneWidget);
+    await tester.tap(picker);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('order-product-101')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('order-product-202')));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const ValueKey('order-product-101-order-value')),
+      '125.5',
+    );
+    await tester.enterText(
+      find.byKey(const ValueKey('order-product-101-available-stock')),
+      '42',
+    );
+    await tester.enterText(
+      find.byKey(const ValueKey('order-product-202-order-value')),
+      '80',
+    );
+    await tester.enterText(
+      find.byKey(const ValueKey('order-product-202-available-stock')),
+      '17',
+    );
+    expect(
+      tester
+          .getTopLeft(
+            find.byKey(const ValueKey('order-product-101-available-stock')),
+          )
+          .dx,
+      lessThan(
+        tester
+            .getTopLeft(
+              find.byKey(const ValueKey('order-product-101-order-value')),
+            )
+            .dx,
+      ),
+    );
+    expect(
+      find.byKey(const ValueKey('order-product-101-quantity')),
+      findsNothing,
+    );
+    await tester.tap(find.text('Done'));
+    await tester.pumpAndSettle();
+
+    expect(
+      tester
+          .widget<Text>(find.byKey(const ValueKey('order-products-summary')))
           .data,
       'Product Alpha, Product Beta',
     );

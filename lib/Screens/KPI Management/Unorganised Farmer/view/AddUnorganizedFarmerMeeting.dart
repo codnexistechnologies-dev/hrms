@@ -163,7 +163,13 @@ class _AddUnorganizedFarmerMeetingState
       Utility.alertInfo(context, data: "Please Select Village Name.");
       return;
     } else if (txt_NoOfFarmerattendance.text == "") {
+      Utility.alertInfo(context, data: "No Of farmer Count Can't be blank.");
+      return;
+    } else if (txt_FarmerName.text == "") {
       Utility.alertInfo(context, data: "Farmer Name Can't be blank.");
+      return;
+    } else if (txt_MobileNumber.text == "") {
+      Utility.alertInfo(context, data: "Mobile No Can't be blank.");
       return;
     } else if (_address == null || _latitude == null || _longitude == null) {
       Utility.alertInfo(

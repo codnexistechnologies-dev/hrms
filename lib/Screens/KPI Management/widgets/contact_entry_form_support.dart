@@ -99,19 +99,25 @@ abstract class ContactEntryFormState<T extends StatefulWidget>
       key: ValueKey('contact-form-$key'),
       controller: fields[key],
       decoration: fieldDecoration(label),
-      inputFormatters:
-          key == 'CONTACT_TYPE' || key == 'ACREAGE' || key == 'PINCODE'
+      inputFormatters: key == 'ACREAGE'
+          ? [
+              TextInputFormatter.withFunction(
+                (oldValue, newValue) =>
+                    RegExp(r'^\d*\.?\d*$').hasMatch(newValue.text)
+                    ? newValue
+                    : oldValue,
+              ),
+            ]
+          : key == 'CONTACT_TYPE' || key == 'PINCODE'
           ? [FilteringTextInputFormatter.digitsOnly]
           : null,
-      keyboardType: key == 'ORDER_VALUE'
+      keyboardType: key == 'ORDER_VALUE' || key == 'ACREAGE'
           ? const TextInputType.numberWithOptions(decimal: true)
           : key == 'MOBILE_NO' || key == 'CUSTOMER_ID'
           ? TextInputType.phone
           : key == "STOCK_AVAILABLE"
           ? TextInputType.number
           : key == "CONTACT_TYPE"
-          ? TextInputType.number
-          : key == "ACREAGE"
           ? TextInputType.number
           : key == "PINCODE"
           ? TextInputType.number
@@ -122,8 +128,6 @@ abstract class ContactEntryFormState<T extends StatefulWidget>
           ? 6
           : key == 'CONTACT_TYPE'
           ? 10
-          : key == 'ACREAGE'
-          ? 2
           : limit,
       buildCounter: (
         context, {
@@ -145,6 +149,10 @@ abstract class ContactEntryFormState<T extends StatefulWidget>
                 (value?.trim().isNotEmpty ?? false) &&
                 !RegExp(r'^\d{10}$').hasMatch(value!.trim())
           ? 'Enter a 10-digit number'
+          : key == 'ACREAGE' &&
+                (value?.trim().isNotEmpty ?? false) &&
+                !RegExp(r'^(\d+(\.\d*)?|\.\d+)$').hasMatch(value!.trim())
+          ? 'Enter valid acres'
           : key == 'ORDER_VALUE' &&
                 (value?.trim().isNotEmpty ?? false) &&
                 !RegExp(r'^\d{1,16}(\.\d{1,2})?$').hasMatch(value!.trim())
