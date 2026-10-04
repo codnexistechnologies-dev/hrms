@@ -31,21 +31,24 @@ class KpiMaster {
   int? liquidatioNPLAN;
   int? fielDDAYS;
   int? collectioNPLAN;
+  int? farmeR_CONTACT_PLAN;
   String? kpIMASTERREMARKS;
   dynamic createddate;
 
-  KpiMaster(
-      {this.kpimid,
-      this.emPCODE,
-      this.paydate,
-      this.organiseDFARMERMETTING,
-      this.unorganiseDFARMERMETTING,
-      this.demOPLAN,
-      this.liquidatioNPLAN,
-      this.fielDDAYS,
-      this.collectioNPLAN,
-      this.kpIMASTERREMARKS,
-      this.createddate});
+  KpiMaster({
+    this.kpimid,
+    this.emPCODE,
+    this.paydate,
+    this.organiseDFARMERMETTING,
+    this.unorganiseDFARMERMETTING,
+    this.demOPLAN,
+    this.liquidatioNPLAN,
+    this.fielDDAYS,
+    this.collectioNPLAN,
+    this.farmeR_CONTACT_PLAN,
+    this.kpIMASTERREMARKS,
+    this.createddate,
+  });
 
   KpiMaster.fromJson(Map<String, dynamic> json) {
     kpimid = json['kpimid'];
@@ -57,6 +60,7 @@ class KpiMaster {
     liquidatioNPLAN = json['liquidatioN_PLAN'];
     fielDDAYS = json['fielD_DAYS'];
     collectioNPLAN = json['collectioN_PLAN'];
+    farmeR_CONTACT_PLAN = json['farmeR_CONTACT_PLAN'];
     kpIMASTERREMARKS = json['kpI_MASTER_REMARKS'];
     createddate = json['createddate'];
   }
@@ -72,6 +76,7 @@ class KpiMaster {
     data['liquidatioN_PLAN'] = liquidatioNPLAN;
     data['fielD_DAYS'] = fielDDAYS;
     data['collectioN_PLAN'] = collectioNPLAN;
+    data['farmeR_CONTACT_PLAN'] = farmeR_CONTACT_PLAN;
     data['kpI_MASTER_REMARKS'] = kpIMASTERREMARKS;
     data['createddate'] = createddate;
     return data;

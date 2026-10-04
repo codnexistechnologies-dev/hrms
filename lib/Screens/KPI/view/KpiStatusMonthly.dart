@@ -1,5 +1,6 @@
 import 'package:aeon_hrms/Screens/KPI%20Management/Collection%20Plan/controller/CollectionPlanController.dart';
 import 'package:aeon_hrms/Screens/KPI%20Management/Demo%20Plan/controller/DemoPlanController.dart';
+import 'package:aeon_hrms/Screens/KPI%20Management/Farmer%20Connectivity%20Entry/controller/FarmerConnectivityEntryController.dart';
 import 'package:aeon_hrms/Screens/KPI%20Management/FieldDays/controller/FieldDaysController.dart';
 import 'package:aeon_hrms/Screens/KPI%20Management/LiquidationPlan/controller/LiquidationPlanController.dart';
 import 'package:aeon_hrms/Screens/KPI%20Management/Organised%20Farmer/controller/OrganisedFarmerMeetingController.dart';
@@ -24,16 +25,28 @@ class KpiStatusMonthly extends StatefulWidget {
 class _KpiStatusMonthlyState extends State<KpiStatusMonthly> {
   // String type = '';
   bool selection = false;
-  final liquidationPlanController =
-      Get.put(LiquidationPlanController(), permanent: true);
+  final liquidationPlanController = Get.put(
+    LiquidationPlanController(),
+    permanent: true,
+  );
   final demoPlanController = Get.put(DemoPlanController(), permanent: true);
-  final collectionPlanController =
-      Get.put(CollectionPlanController(), permanent: true);
+  final collectionPlanController = Get.put(
+    CollectionPlanController(),
+    permanent: true,
+  );
+  final farmerConnectivityController = Get.put(
+    FarmerConnectivityEntryController(),
+    permanent: true,
+  );
   final fieldDaysController = Get.put(FieldDaysController(), permanent: true);
-  final organisedFarmerMeetingController =
-      Get.put(OrganisedFarmerMeetingController(), permanent: true);
-  final unorganizedFarmerMeetingController =
-      Get.put(UnorganizedFarmerMeetingController(), permanent: true);
+  final organisedFarmerMeetingController = Get.put(
+    OrganisedFarmerMeetingController(),
+    permanent: true,
+  );
+  final unorganizedFarmerMeetingController = Get.put(
+    UnorganizedFarmerMeetingController(),
+    permanent: true,
+  );
   final TextEditingController txt_DemoPlanTarget = TextEditingController();
   final TextEditingController txt_DemoPlanAchieved = TextEditingController();
   final TextEditingController txt_LiqPlanTarget = TextEditingController();
@@ -46,6 +59,8 @@ class _KpiStatusMonthlyState extends State<KpiStatusMonthly> {
   final TextEditingController txt_UnorgMeetingAchieved =
       TextEditingController();
   final TextEditingController txt_FieldDaysTarget = TextEditingController();
+  final TextEditingController txt_farmerVisitTarget = TextEditingController();
+  final TextEditingController txt_farmerVisitAchieved = TextEditingController();
   final TextEditingController txt_FieldDaysAchieved = TextEditingController();
   @override
   void dispose() {
@@ -61,6 +76,7 @@ class _KpiStatusMonthlyState extends State<KpiStatusMonthly> {
     txt_UnorgMeetingAchieved.dispose();
     txt_FieldDaysTarget.dispose();
     txt_FieldDaysAchieved.dispose();
+    txt_farmerVisitTarget.dispose();
     super.dispose();
   }
 
@@ -77,20 +93,32 @@ class _KpiStatusMonthlyState extends State<KpiStatusMonthly> {
 
   void GetKpiMasterData() {
     liquidationPlanController.GetKpiMasterByUseridandPaydate(
-        "$yearValues-$monthValue-01");
+      "$yearValues-$monthValue-01",
+    );
     demoPlanController.GetDemoPlanAchievementByUseridandPayDate(
-        "$yearValues-$monthValue-01");
+      "$yearValues-$monthValue-01",
+    );
     collectionPlanController.GetCollectionPlanAchievementByUseridandPayDate(
-        "$yearValues-$monthValue-01");
+      "$yearValues-$monthValue-01",
+    );
     liquidationPlanController.GetLiquidationPlanAchievementByUseridandPayDate(
-        "$yearValues-$monthValue-01");
+      "$yearValues-$monthValue-01",
+    );
     fieldDaysController.GetFieldDaysAchievementByUseridandPayDate(
-        "$yearValues-$monthValue-01");
+      "$yearValues-$monthValue-01",
+    );
     organisedFarmerMeetingController.GetOrganisedMeetingAchiByUseridandPayDate(
-        "$yearValues-$monthValue-01");
-    unorganizedFarmerMeetingController
-        .GetUnorganisedMeetingAchiByUseridandPayDate(
-            "$yearValues-$monthValue-01");
+      "$yearValues-$monthValue-01",
+    );
+    unorganizedFarmerMeetingController.GetUnorganisedMeetingAchiByUseridandPayDate(
+      "$yearValues-$monthValue-01",
+    );
+    unorganizedFarmerMeetingController.GetUnorganisedMeetingAchiByUseridandPayDate(
+      "$yearValues-$monthValue-01",
+    );
+    farmerConnectivityController.getFarmerVisitAchievementByUseridandPayDate(
+      "$yearValues-$monthValue-01",
+    );
   }
 
   @override
@@ -104,7 +132,9 @@ class _KpiStatusMonthlyState extends State<KpiStatusMonthly> {
         title: Text(
           'KPI Status',
           style: kTextStyle.copyWith(
-              color: Colors.white, fontWeight: FontWeight.bold),
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ),
       body: SingleChildScrollView(
@@ -114,25 +144,22 @@ class _KpiStatusMonthlyState extends State<KpiStatusMonthly> {
               : Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const SizedBox(
-                      height: 20.0,
-                    ),
+                    const SizedBox(height: 20.0),
                     Container(
                       //height: context.height(),
                       padding: const EdgeInsets.all(20.0),
                       decoration: const BoxDecoration(
                         borderRadius: BorderRadius.only(
-                            topLeft: Radius.circular(30.0),
-                            topRight: Radius.circular(30.0)),
+                          topLeft: Radius.circular(30.0),
+                          topRight: Radius.circular(30.0),
+                        ),
                         color: Colors.white,
                       ),
                       child: Form(
                         key: _formKey,
                         child: Column(
                           children: [
-                            const SizedBox(
-                              height: 20.0,
-                            ),
+                            const SizedBox(height: 20.0),
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
@@ -150,7 +177,11 @@ class _KpiStatusMonthlyState extends State<KpiStatusMonthly> {
                                                 fontSize: 14,
                                                 fontWeight: FontWeight.w500,
                                                 color: Color.fromARGB(
-                                                    255, 128, 126, 126),
+                                                  255,
+                                                  128,
+                                                  126,
+                                                  126,
+                                                ),
                                               ),
                                               overflow: TextOverflow.ellipsis,
                                             ),
@@ -158,21 +189,27 @@ class _KpiStatusMonthlyState extends State<KpiStatusMonthly> {
                                         ],
                                       ),
                                       items: monthName
-                                          .map((String item) =>
-                                              DropdownMenuItem<String>(
-                                                value: item,
-                                                child: Text(
-                                                  item,
-                                                  style: const TextStyle(
-                                                    fontSize: 14,
-                                                    fontWeight: FontWeight.w500,
-                                                    color: Color.fromARGB(
-                                                        255, 128, 126, 126),
+                                          .map(
+                                            (
+                                              String item,
+                                            ) => DropdownMenuItem<String>(
+                                              value: item,
+                                              child: Text(
+                                                item,
+                                                style: const TextStyle(
+                                                  fontSize: 14,
+                                                  fontWeight: FontWeight.w500,
+                                                  color: Color.fromARGB(
+                                                    255,
+                                                    128,
+                                                    126,
+                                                    126,
                                                   ),
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
                                                 ),
-                                              ))
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                          )
                                           .toList(),
                                       value: monthValue,
                                       onChanged: (String? value) {
@@ -185,10 +222,13 @@ class _KpiStatusMonthlyState extends State<KpiStatusMonthly> {
                                         height: 50,
                                         width: double.infinity,
                                         padding: const EdgeInsets.only(
-                                            left: 14, right: 14),
+                                          left: 14,
+                                          right: 14,
+                                        ),
                                         decoration: BoxDecoration(
-                                          borderRadius:
-                                              BorderRadius.circular(5),
+                                          borderRadius: BorderRadius.circular(
+                                            5,
+                                          ),
                                           border: Border.all(
                                             color: Colors.black26,
                                           ),
@@ -200,17 +240,26 @@ class _KpiStatusMonthlyState extends State<KpiStatusMonthly> {
                                           Icons.arrow_forward_ios_outlined,
                                         ),
                                         iconSize: 14,
-                                        iconEnabledColor:
-                                            Color.fromARGB(255, 128, 126, 126),
-                                        iconDisabledColor:
-                                            Color.fromARGB(255, 179, 178, 178),
+                                        iconEnabledColor: Color.fromARGB(
+                                          255,
+                                          128,
+                                          126,
+                                          126,
+                                        ),
+                                        iconDisabledColor: Color.fromARGB(
+                                          255,
+                                          179,
+                                          178,
+                                          178,
+                                        ),
                                       ),
                                       dropdownStyleData: DropdownStyleData(
                                         maxHeight: 300,
                                         width: 140,
                                         decoration: BoxDecoration(
-                                          borderRadius:
-                                              BorderRadius.circular(5),
+                                          borderRadius: BorderRadius.circular(
+                                            5,
+                                          ),
                                           border: Border.all(
                                             color: Colors.black26,
                                           ),
@@ -221,18 +270,22 @@ class _KpiStatusMonthlyState extends State<KpiStatusMonthly> {
                                           radius: const Radius.circular(40),
                                           thickness:
                                               WidgetStateProperty.all<double>(
-                                                  6),
+                                                6,
+                                              ),
                                           thumbVisibility:
                                               WidgetStateProperty.all<bool>(
-                                                  true),
+                                                true,
+                                              ),
                                         ),
                                       ),
                                       menuItemStyleData:
                                           const MenuItemStyleData(
-                                        height: 40,
-                                        padding: EdgeInsets.only(
-                                            left: 14, right: 14),
-                                      ),
+                                            height: 40,
+                                            padding: EdgeInsets.only(
+                                              left: 14,
+                                              right: 14,
+                                            ),
+                                          ),
                                     ),
                                   ),
                                 ),
@@ -250,7 +303,11 @@ class _KpiStatusMonthlyState extends State<KpiStatusMonthly> {
                                                 fontSize: 14,
                                                 fontWeight: FontWeight.w500,
                                                 color: Color.fromARGB(
-                                                    255, 128, 126, 126),
+                                                  255,
+                                                  128,
+                                                  126,
+                                                  126,
+                                                ),
                                               ),
                                               overflow: TextOverflow.ellipsis,
                                             ),
@@ -258,21 +315,27 @@ class _KpiStatusMonthlyState extends State<KpiStatusMonthly> {
                                         ],
                                       ),
                                       items: yearList
-                                          .map((String item) =>
-                                              DropdownMenuItem<String>(
-                                                value: item,
-                                                child: Text(
-                                                  item,
-                                                  style: const TextStyle(
-                                                    fontSize: 14,
-                                                    fontWeight: FontWeight.w500,
-                                                    color: Color.fromARGB(
-                                                        255, 128, 126, 126),
+                                          .map(
+                                            (
+                                              String item,
+                                            ) => DropdownMenuItem<String>(
+                                              value: item,
+                                              child: Text(
+                                                item,
+                                                style: const TextStyle(
+                                                  fontSize: 14,
+                                                  fontWeight: FontWeight.w500,
+                                                  color: Color.fromARGB(
+                                                    255,
+                                                    128,
+                                                    126,
+                                                    126,
                                                   ),
-                                                  overflow:
-                                                      TextOverflow.ellipsis,
                                                 ),
-                                              ))
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                          )
                                           .toList(),
                                       value: yearValues,
                                       onChanged: (String? value) {
@@ -285,10 +348,13 @@ class _KpiStatusMonthlyState extends State<KpiStatusMonthly> {
                                         height: 50,
                                         width: 140,
                                         padding: const EdgeInsets.only(
-                                            left: 14, right: 14),
+                                          left: 14,
+                                          right: 14,
+                                        ),
                                         decoration: BoxDecoration(
-                                          borderRadius:
-                                              BorderRadius.circular(5),
+                                          borderRadius: BorderRadius.circular(
+                                            5,
+                                          ),
                                           border: Border.all(
                                             color: Colors.black26,
                                           ),
@@ -300,17 +366,26 @@ class _KpiStatusMonthlyState extends State<KpiStatusMonthly> {
                                           Icons.arrow_forward_ios_outlined,
                                         ),
                                         iconSize: 14,
-                                        iconEnabledColor:
-                                            Color.fromARGB(255, 128, 126, 126),
-                                        iconDisabledColor:
-                                            Color.fromARGB(255, 179, 178, 178),
+                                        iconEnabledColor: Color.fromARGB(
+                                          255,
+                                          128,
+                                          126,
+                                          126,
+                                        ),
+                                        iconDisabledColor: Color.fromARGB(
+                                          255,
+                                          179,
+                                          178,
+                                          178,
+                                        ),
                                       ),
                                       dropdownStyleData: DropdownStyleData(
                                         maxHeight: 200,
                                         width: 140,
                                         decoration: BoxDecoration(
-                                          borderRadius:
-                                              BorderRadius.circular(5),
+                                          borderRadius: BorderRadius.circular(
+                                            5,
+                                          ),
                                           border: Border.all(
                                             color: Colors.black26,
                                           ),
@@ -321,39 +396,43 @@ class _KpiStatusMonthlyState extends State<KpiStatusMonthly> {
                                           radius: const Radius.circular(40),
                                           thickness:
                                               WidgetStateProperty.all<double>(
-                                                  6),
+                                                6,
+                                              ),
                                           thumbVisibility:
                                               WidgetStateProperty.all<bool>(
-                                                  true),
+                                                true,
+                                              ),
                                         ),
                                       ),
                                       menuItemStyleData:
                                           const MenuItemStyleData(
-                                        height: 40,
-                                        padding: EdgeInsets.only(
-                                            left: 14, right: 14),
-                                      ),
+                                            height: 40,
+                                            padding: EdgeInsets.only(
+                                              left: 14,
+                                              right: 14,
+                                            ),
+                                          ),
                                     ),
                                   ),
                                 ),
                               ],
                             ),
-                            const SizedBox(
-                              height: 40.0,
-                            ),
+                            const SizedBox(height: 40.0),
                             Row(
                               children: [
                                 Expanded(
                                   child: AppTextField(
                                     controller: txt_DemoPlanTarget
-                                      ..text = (liquidationPlanController
-                                              .kpimasterList.isNotEmpty)
+                                      ..text =
+                                          (liquidationPlanController
+                                              .kpimasterList
+                                              .isNotEmpty)
                                           ? (liquidationPlanController
-                                                      .kpimasterList
-                                                      .first
-                                                      .demOPLAN ??
-                                                  0)
-                                              .toString()
+                                                        .kpimasterList
+                                                        .first
+                                                        .demOPLAN ??
+                                                    0)
+                                                .toString()
                                           : 'No Data',
                                     textFieldType: TextFieldType.NUMBER,
                                     decoration: const InputDecoration(
@@ -366,21 +445,20 @@ class _KpiStatusMonthlyState extends State<KpiStatusMonthly> {
                                     ),
                                   ),
                                 ),
-                                const SizedBox(
-                                  width: 20.0,
-                                ),
+                                const SizedBox(width: 20.0),
                                 Expanded(
                                   child: AppTextField(
                                     controller: txt_DemoPlanAchieved
-                                      ..text = (demoPlanController
+                                      ..text =
+                                          (demoPlanController
                                               .demoPlanAchievementList
                                               .isNotEmpty)
                                           ? (demoPlanController
-                                                      .demoPlanAchievementList
-                                                      .first
-                                                      .demOPLANACHIEVEMENT ??
-                                                  0)
-                                              .toString()
+                                                        .demoPlanAchievementList
+                                                        .first
+                                                        .demOPLANACHIEVEMENT ??
+                                                    0)
+                                                .toString()
                                           : 'No Data',
                                     textFieldType: TextFieldType.NUMBER,
                                     decoration: const InputDecoration(
@@ -395,22 +473,22 @@ class _KpiStatusMonthlyState extends State<KpiStatusMonthly> {
                                 ),
                               ],
                             ),
-                            const SizedBox(
-                              height: 30.0,
-                            ),
+                            const SizedBox(height: 30.0),
                             Row(
                               children: [
                                 Expanded(
                                   child: AppTextField(
                                     controller: txt_OrgMeetingTarget
-                                      ..text = (liquidationPlanController
-                                              .kpimasterList.isNotEmpty)
+                                      ..text =
+                                          (liquidationPlanController
+                                              .kpimasterList
+                                              .isNotEmpty)
                                           ? (liquidationPlanController
-                                                      .kpimasterList
-                                                      .first
-                                                      .organiseDFARMERMETTING ??
-                                                  0)
-                                              .toString()
+                                                        .kpimasterList
+                                                        .first
+                                                        .organiseDFARMERMETTING ??
+                                                    0)
+                                                .toString()
                                           : 'No Data',
                                     textFieldType: TextFieldType.NUMBER,
                                     decoration: const InputDecoration(
@@ -423,21 +501,20 @@ class _KpiStatusMonthlyState extends State<KpiStatusMonthly> {
                                     ),
                                   ),
                                 ),
-                                const SizedBox(
-                                  width: 20.0,
-                                ),
+                                const SizedBox(width: 20.0),
                                 Expanded(
                                   child: AppTextField(
                                     controller: txt_OrgMeetingAchieved
-                                      ..text = (organisedFarmerMeetingController
+                                      ..text =
+                                          (organisedFarmerMeetingController
                                               .organisedMeetingAchiList
                                               .isNotEmpty)
                                           ? (organisedFarmerMeetingController
-                                                      .organisedMeetingAchiList
-                                                      .first
-                                                      .organiseDMEETINGACHIEVEMENT ??
-                                                  0)
-                                              .toString()
+                                                        .organisedMeetingAchiList
+                                                        .first
+                                                        .organiseDMEETINGACHIEVEMENT ??
+                                                    0)
+                                                .toString()
                                           : 'No Data',
                                     textFieldType: TextFieldType.NUMBER,
                                     enabled: false,
@@ -452,22 +529,22 @@ class _KpiStatusMonthlyState extends State<KpiStatusMonthly> {
                                 ),
                               ],
                             ),
-                            const SizedBox(
-                              height: 30.0,
-                            ),
+                            const SizedBox(height: 30.0),
                             Row(
                               children: [
                                 Expanded(
                                   child: AppTextField(
                                     controller: txt_UnorgMeetingTarget
-                                      ..text = (liquidationPlanController
-                                              .kpimasterList.isNotEmpty)
+                                      ..text =
+                                          (liquidationPlanController
+                                              .kpimasterList
+                                              .isNotEmpty)
                                           ? (liquidationPlanController
-                                                      .kpimasterList
-                                                      .first
-                                                      .unorganiseDFARMERMETTING ??
-                                                  0)
-                                              .toString()
+                                                        .kpimasterList
+                                                        .first
+                                                        .unorganiseDFARMERMETTING ??
+                                                    0)
+                                                .toString()
                                           : 'No Data',
                                     textFieldType: TextFieldType.NUMBER,
                                     decoration: const InputDecoration(
@@ -480,21 +557,20 @@ class _KpiStatusMonthlyState extends State<KpiStatusMonthly> {
                                     ),
                                   ),
                                 ),
-                                const SizedBox(
-                                  width: 20.0,
-                                ),
+                                const SizedBox(width: 20.0),
                                 Expanded(
                                   child: AppTextField(
                                     controller: txt_UnorgMeetingAchieved
-                                      ..text = (unorganizedFarmerMeetingController
+                                      ..text =
+                                          (unorganizedFarmerMeetingController
                                               .unorganisedMeetingAchiList
                                               .isNotEmpty)
                                           ? (unorganizedFarmerMeetingController
-                                                      .unorganisedMeetingAchiList
-                                                      .first
-                                                      .unorganiseDMEETINGACHIEVEMENT ??
-                                                  0)
-                                              .toString()
+                                                        .unorganisedMeetingAchiList
+                                                        .first
+                                                        .unorganiseDMEETINGACHIEVEMENT ??
+                                                    0)
+                                                .toString()
                                           : 'No Data',
                                     textFieldType: TextFieldType.NUMBER,
                                     decoration: const InputDecoration(
@@ -509,22 +585,22 @@ class _KpiStatusMonthlyState extends State<KpiStatusMonthly> {
                                 ),
                               ],
                             ),
-                            const SizedBox(
-                              height: 30.0,
-                            ),
+                            const SizedBox(height: 30.0),
                             Row(
                               children: [
                                 Expanded(
                                   child: AppTextField(
                                     controller: txt_FieldDaysTarget
-                                      ..text = (liquidationPlanController
-                                              .kpimasterList.isNotEmpty)
+                                      ..text =
+                                          (liquidationPlanController
+                                              .kpimasterList
+                                              .isNotEmpty)
                                           ? (liquidationPlanController
-                                                      .kpimasterList
-                                                      .first
-                                                      .fielDDAYS ??
-                                                  0)
-                                              .toString()
+                                                        .kpimasterList
+                                                        .first
+                                                        .fielDDAYS ??
+                                                    0)
+                                                .toString()
                                           : 'No Data',
                                     textFieldType: TextFieldType.NUMBER,
                                     decoration: const InputDecoration(
@@ -537,20 +613,20 @@ class _KpiStatusMonthlyState extends State<KpiStatusMonthly> {
                                     ),
                                   ),
                                 ),
-                                const SizedBox(
-                                  width: 20.0,
-                                ),
+                                const SizedBox(width: 20.0),
                                 Expanded(
                                   child: AppTextField(
                                     controller: txt_FieldDaysAchieved
-                                      ..text = (fieldDaysController
-                                              .fieldDaysList.isNotEmpty)
+                                      ..text =
+                                          (fieldDaysController
+                                              .fieldDaysList
+                                              .isNotEmpty)
                                           ? (fieldDaysController
-                                                      .fieldDaysList
-                                                      .first
-                                                      .fielDDAYSACHIEVEMENT ??
-                                                  0)
-                                              .toString()
+                                                        .fieldDaysList
+                                                        .first
+                                                        .fielDDAYSACHIEVEMENT ??
+                                                    0)
+                                                .toString()
                                           : 'No Data',
                                     textFieldType: TextFieldType.NUMBER,
                                     decoration: const InputDecoration(
@@ -565,22 +641,22 @@ class _KpiStatusMonthlyState extends State<KpiStatusMonthly> {
                                 ),
                               ],
                             ),
-                            const SizedBox(
-                              height: 30.0,
-                            ),
+                            const SizedBox(height: 30.0),
                             Row(
                               children: [
                                 Expanded(
                                   child: AppTextField(
                                     controller: txt_LiqPlanTarget
-                                      ..text = (liquidationPlanController
-                                              .kpimasterList.isNotEmpty)
+                                      ..text =
+                                          (liquidationPlanController
+                                              .kpimasterList
+                                              .isNotEmpty)
                                           ? (liquidationPlanController
-                                                      .kpimasterList
-                                                      .first
-                                                      .liquidatioNPLAN ??
-                                                  0)
-                                              .toString()
+                                                        .kpimasterList
+                                                        .first
+                                                        .liquidatioNPLAN ??
+                                                    0)
+                                                .toString()
                                           : 'No Data',
                                     textFieldType: TextFieldType.NUMBER,
                                     decoration: const InputDecoration(
@@ -593,20 +669,20 @@ class _KpiStatusMonthlyState extends State<KpiStatusMonthly> {
                                     ),
                                   ),
                                 ),
-                                const SizedBox(
-                                  width: 20.0,
-                                ),
+                                const SizedBox(width: 20.0),
                                 Expanded(
                                   child: AppTextField(
                                     controller: txt_LiqPlanAchieved
-                                      ..text = (liquidationPlanController
-                                              .liquidationPlanList.isNotEmpty)
+                                      ..text =
+                                          (liquidationPlanController
+                                              .liquidationPlanList
+                                              .isNotEmpty)
                                           ? (liquidationPlanController
-                                                      .liquidationPlanList
-                                                      .first
-                                                      .liquidatioNPLANACHIEVEMENT ??
-                                                  0)
-                                              .toString()
+                                                        .liquidationPlanList
+                                                        .first
+                                                        .liquidatioNPLANACHIEVEMENT ??
+                                                    0)
+                                                .toString()
                                           : 'No Data',
                                     textFieldType: TextFieldType.NUMBER,
                                     decoration: const InputDecoration(
@@ -621,22 +697,22 @@ class _KpiStatusMonthlyState extends State<KpiStatusMonthly> {
                                 ),
                               ],
                             ),
-                            const SizedBox(
-                              height: 30.0,
-                            ),
+                            const SizedBox(height: 30.0),
                             Row(
                               children: [
                                 Expanded(
                                   child: AppTextField(
                                     controller: txt_CollPlanTarget
-                                      ..text = (liquidationPlanController
-                                              .kpimasterList.isNotEmpty)
+                                      ..text =
+                                          (liquidationPlanController
+                                              .kpimasterList
+                                              .isNotEmpty)
                                           ? (liquidationPlanController
-                                                      .kpimasterList
-                                                      .first
-                                                      .collectioNPLAN ??
-                                                  0)
-                                              .toString()
+                                                        .kpimasterList
+                                                        .first
+                                                        .collectioNPLAN ??
+                                                    0)
+                                                .toString()
                                           : 'No Data',
                                     textFieldType: TextFieldType.NUMBER,
                                     decoration: const InputDecoration(
@@ -649,21 +725,20 @@ class _KpiStatusMonthlyState extends State<KpiStatusMonthly> {
                                     ),
                                   ),
                                 ),
-                                const SizedBox(
-                                  width: 20.0,
-                                ),
+                                const SizedBox(width: 20.0),
                                 Expanded(
                                   child: AppTextField(
                                     controller: txt_CollPlanAchieved
-                                      ..text = (collectionPlanController
+                                      ..text =
+                                          (collectionPlanController
                                               .collectionPlanAchievementList
                                               .isNotEmpty)
                                           ? (collectionPlanController
-                                                      .collectionPlanAchievementList
-                                                      .first
-                                                      .collectioNPLANACHIEVEMENT ??
-                                                  0)
-                                              .toString()
+                                                        .collectionPlanAchievementList
+                                                        .first
+                                                        .collectioNPLANACHIEVEMENT ??
+                                                    0)
+                                                .toString()
                                           : 'No Data',
                                     textFieldType: TextFieldType.NUMBER,
                                     decoration: const InputDecoration(
@@ -678,9 +753,63 @@ class _KpiStatusMonthlyState extends State<KpiStatusMonthly> {
                                 ),
                               ],
                             ),
-                            const SizedBox(
-                              height: 30.0,
+                            const SizedBox(height: 30.0),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: AppTextField(
+                                    controller: txt_farmerVisitTarget
+                                      ..text =
+                                          (liquidationPlanController
+                                              .kpimasterList
+                                              .isNotEmpty)
+                                          ? (liquidationPlanController
+                                                        .kpimasterList
+                                                        .first
+                                                        .farmeR_CONTACT_PLAN ??
+                                                    0)
+                                                .toString()
+                                          : 'No Data',
+                                    textFieldType: TextFieldType.NUMBER,
+                                    decoration: const InputDecoration(
+                                      labelText: "Farmer Visit Target",
+                                      enabled: false,
+                                      floatingLabelBehavior:
+                                          FloatingLabelBehavior.always,
+                                      hintText: "Farmer Visit Target",
+                                      border: OutlineInputBorder(),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 20.0),
+                                Expanded(
+                                  child: AppTextField(
+                                    controller: txt_farmerVisitAchieved
+                                      ..text =
+                                          (farmerConnectivityController
+                                              .farmerVisitAchievementList
+                                              .isNotEmpty)
+                                          ? (farmerConnectivityController
+                                                        .farmerVisitAchievementList
+                                                        .first
+                                                        .farmeRVISITACHIEVEMENT ??
+                                                    0)
+                                                .toString()
+                                          : 'No Data',
+                                    textFieldType: TextFieldType.NUMBER,
+                                    decoration: const InputDecoration(
+                                      labelText: "Farmer Visit Achieved",
+                                      enabled: false,
+                                      floatingLabelBehavior:
+                                          FloatingLabelBehavior.always,
+                                      hintText: "Farmer Visit Achieved",
+                                      border: OutlineInputBorder(),
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
+                            const SizedBox(height: 30.0),
                           ],
                         ),
                       ),

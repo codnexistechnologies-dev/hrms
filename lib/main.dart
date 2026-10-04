@@ -39,7 +39,7 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await SharedPref.initialize();
-  await Firebase.initializeApp();
+  //await Firebase.initializeApp();
   await StorageHelper.initialize();
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
