@@ -217,8 +217,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   bottomLeft: Radius.circular(30.0),
                   bottomRight: Radius.circular(30.0),
                 ),
-                color: Color.fromARGB(255, 129, 188, 224),
-                // color: Color.fromARGB(255, 171, 224, 129),
+                // color: Color.fromARGB(255, 129, 188, 224),
+                color: Color.fromARGB(255, 171, 224, 129),
               ),
               child: Column(
                 children: [
