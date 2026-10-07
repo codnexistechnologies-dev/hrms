@@ -40,17 +40,16 @@ class _TrainingPdfViewerScreenState extends State<TrainingPdfViewerScreen> {
         );
       }
 
-      final pdfUrl = widget.module.pdfUrl;
+      final pdfUrl =
+          "${ApiConstant.imageUrl}/TrainingDocuments/${widget.module.storedFileName}";
       if (pdfUrl.isEmpty) {
         throw Exception('File URL is empty');
       }
 
-      // Try fetching from primary pdfUrl
       http.Response response = await http
           .get(Uri.parse(pdfUrl))
           .timeout(const Duration(seconds: 30));
 
-      // Fallback to baseUrl/storedFileName if 404
       if (response.statusCode != 200 &&
           widget.module.storedFileName.isNotEmpty) {
         final fallbackUrl =
@@ -181,7 +180,7 @@ class _TrainingPdfViewerScreenState extends State<TrainingPdfViewerScreen> {
               ),
             )
           : SfPdfViewer.network(
-              widget.module.pdfUrl,
+              "${ApiConstant.imageUrl}/TrainingDocuments/${widget.module.storedFileName}",
               key: _pdfViewerKey,
               onDocumentLoadFailed: (PdfDocumentLoadFailedDetails details) {
                 setState(() {
