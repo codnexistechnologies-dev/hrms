@@ -1,4 +1,3 @@
-import 'package:aeon_hrms/Screens/KPI%20Management/Collection%20Plan/view/AddCollectionPlan.dart';
 import 'package:aeon_hrms/Screens/KPI%20Management/Demo%20Plan/view/AddDemoPlan.dart';
 import 'package:aeon_hrms/Screens/KPI%20Management/Farmer%20Connectivity%20Entry/view/AddFarmerConnectivityEntry.dart';
 import 'package:aeon_hrms/Screens/KPI%20Management/FieldDays/view/AddFieldDays.dart';
@@ -231,39 +230,39 @@ class _KpiListNewState extends State<KpiListNew> {
                       ),
                     ),
                     const SizedBox(height: 20.0),
-                    Material(
-                      elevation: 2.0,
-                      child: GestureDetector(
-                        onTap: () {
-                          const AddCollectionPlan().launch(context);
-                        },
-                        child: Container(
-                          width: context.width(),
-                          padding: const EdgeInsets.all(10.0),
-                          decoration: const BoxDecoration(
-                            border: Border(
-                              left: BorderSide(
-                                color: Color(0xFF7D6AEF),
-                                width: 3.0,
-                              ),
-                            ),
-                            color: Colors.white,
-                          ),
-                          child: ListTile(
-                            title: Text(
-                              "Collection Plan",
-                              maxLines: 2,
-                              style: kTextStyle.copyWith(
-                                color: kTitleColor,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            trailing: const Icon(Icons.arrow_forward_ios),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 20.0),
+                    // Material(
+                    //   elevation: 2.0,
+                    //   child: GestureDetector(
+                    //     onTap: () {
+                    //       const AddCollectionPlan().launch(context);
+                    //     },
+                    //     child: Container(
+                    //       width: context.width(),
+                    //       padding: const EdgeInsets.all(10.0),
+                    //       decoration: const BoxDecoration(
+                    //         border: Border(
+                    //           left: BorderSide(
+                    //             color: Color(0xFF7D6AEF),
+                    //             width: 3.0,
+                    //           ),
+                    //         ),
+                    //         color: Colors.white,
+                    //       ),
+                    //       child: ListTile(
+                    //         title: Text(
+                    //           "Collection Plan",
+                    //           maxLines: 2,
+                    //           style: kTextStyle.copyWith(
+                    //             color: kTitleColor,
+                    //             fontWeight: FontWeight.bold,
+                    //           ),
+                    //         ),
+                    //         trailing: const Icon(Icons.arrow_forward_ios),
+                    //       ),
+                    //     ),
+                    //   ),
+                    // ),
+                    // const SizedBox(height: 20.0),
                     Material(
                       elevation: 2.0,
                       child: GestureDetector(

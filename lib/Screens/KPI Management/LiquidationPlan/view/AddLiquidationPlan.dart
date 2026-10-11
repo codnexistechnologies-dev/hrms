@@ -17,6 +17,7 @@ class AddLiquidationPlan extends StatefulWidget {
 
 class _AddLiquidationPlanState
     extends ContactEntryFormState<AddLiquidationPlan> {
+  @override
   final liquidationPlanController = Get.put(
     LiquidationPlanController(),
     permanent: true,
@@ -25,9 +26,11 @@ class _AddLiquidationPlanState
   final TextEditingController txt_Target = TextEditingController();
   final TextEditingController txt_Achieved = TextEditingController();
   final TextEditingController txt_Remarks = TextEditingController();
+  late final Worker _targetWorker;
 
   @override
   void dispose() {
+    _targetWorker.dispose();
     Get.delete<LiquidationPlanController>();
     txt_Atdate.dispose();
     txt_Target.dispose();
@@ -42,8 +45,17 @@ class _AddLiquidationPlanState
   void initState() {
     super.initState();
     String currentDate = DateTime.now().toString().substring(0, 10);
-    liquidationPlanController.GetKpiMasterByUseridandPaydate(currentDate);
+    //liquidationPlanController.GetKpiMasterByUseridandPaydate(currentDate);
     txt_Atdate.text = currentDate;
+    txt_Target.text = '0';
+    _targetWorker = ever<num>(
+      liquidationPlanController.liquidationProductAchievement,
+      (achievement) => txt_Target.text = achievement.toString(),
+    );
+    liquidationPlanController.getLiquidationProductwiseAchievement(
+      demoPlanController.productselectedValue.value?.productCode ?? 0,
+      currentDate,
+    );
   }
 
   bool isLoading = false;
@@ -136,22 +148,15 @@ class _AddLiquidationPlanState
                               ),
                             ),
                             const SizedBox(height: 20.0),
-                            productDropdown(required: true),
+                            productDropdown(
+                              required: true,
+                              from: "LiquidationPlan",
+                              date: txt_Atdate.text,
+                            ),
                             const SizedBox(height: 20.0),
                             SizedBox(
                               child: AppTextField(
-                                controller: txt_Target
-                                  ..text =
-                                      liquidationPlanController
-                                          .kpimasterList
-                                          .isNotEmpty
-                                      ? (liquidationPlanController
-                                                    .kpimasterList
-                                                    .first
-                                                    .liquidatioNPLAN ??
-                                                0)
-                                            .toString()
-                                      : "0",
+                                controller: txt_Target,
                                 textFieldType: TextFieldType.NAME,
                                 decoration: const InputDecoration(
                                   labelText: "Target",

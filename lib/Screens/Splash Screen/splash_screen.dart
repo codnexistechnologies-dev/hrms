@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:aeon_hrms/Utility/MLImage.dart';
-import 'package:aeon_hrms/component/storage_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -10,8 +9,6 @@ import 'package:aeon_hrms/Screens/Home/home_screen.dart';
 import 'package:aeon_hrms/Utility/shared_preferences_service.dart';
 //import 'package:aeon_hrms/Utility/location_handler.dart';
 import 'package:permission_handler/permission_handler.dart';
-
-import '../../constant.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});

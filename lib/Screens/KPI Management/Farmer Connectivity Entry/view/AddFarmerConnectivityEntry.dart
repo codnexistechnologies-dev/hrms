@@ -165,12 +165,7 @@ class _AddFarmerConnectivityEntryState
       villageDropdown(required: true),
       textField('FARMER_NAME', 'Farmer Name', limit: 1000, required: true),
       textField('PINCODE', 'Pincode', limit: 6, required: true),
-      textField(
-        'CONTACT_TYPE',
-        'Contact Number',
-        required: true,
-        limit: 10,
-      ),
+      textField('CONTACT_TYPE', 'Contact Number', required: true, limit: 10),
       textField('ACREAGE', 'Acres', required: true),
       otherProductDiscussDropdown(),
       textField(

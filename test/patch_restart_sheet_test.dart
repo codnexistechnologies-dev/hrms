@@ -7,6 +7,47 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shorebird_code_push/shorebird_code_push.dart';
 
 void main() {
+  testWidgets('detects automatic download finishing after startup check', (
+    tester,
+  ) async {
+    var status = UpdateStatus.outdated;
+    final controller = PatchUpdateController(
+      isAvailable: () => true,
+      checkStatus: () async => status,
+      // Automatic native updater already owns the download, so update returns
+      // before the downloaded patch is ready.
+      download: () async {},
+    );
+    final navigatorKey = GlobalKey<NavigatorState>();
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await tester.pumpWidget(
+      MaterialApp(
+        navigatorKey: navigatorKey,
+        builder: (_, child) => PatchUpdateNotice(
+          navigatorKey: navigatorKey,
+          controller: controller,
+          restart: () async {},
+          child: child!,
+        ),
+        home: const Scaffold(body: Text('Home')),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('New update available'), findsNothing);
+    status = UpdateStatus.restartRequired;
+    await tester.runAsync(() => controller.check(force: true));
+    await tester.pumpAndSettle();
+    expect(find.text('New update available'), findsOneWidget);
+    await tester.drag(find.text('New update available'), const Offset(0, 400));
+    await tester.pumpAndSettle();
+    expect(find.text('New update available'), findsOneWidget);
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(find.text('New update available'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox.shrink());
+    controller.dispose();
+  });
+
   testWidgets(
     'download completion opens one mandatory sheet above the navigator',
     (tester) async {
@@ -21,14 +62,15 @@ void main() {
         },
       );
       final navigatorKey = GlobalKey<NavigatorState>();
-      tester.binding.handleAppLifecycleStateChanged(
-        AppLifecycleState.resumed,
-      );
+      final navigationObserver = PatchUpdateNavigatorObserver();
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
       await tester.pumpWidget(
         MaterialApp(
           navigatorKey: navigatorKey,
+          navigatorObservers: [navigationObserver],
           builder: (_, child) => PatchUpdateNotice(
             navigatorKey: navigatorKey,
+            navigationObserver: navigationObserver,
             controller: controller,
             restart: () async {},
             child: child!,
@@ -44,6 +86,17 @@ void main() {
       expect(find.text('Restart now'), findsOneWidget);
       expect(find.text('Later'), findsNothing);
       await tester.tapAt(const Offset(5, 5));
+      await tester.pumpAndSettle();
+      expect(find.text('New update available'), findsOneWidget);
+      unawaited(
+        navigatorKey.currentState!.push<void>(
+          MaterialPageRoute(
+            builder: (_) => const Scaffold(body: Text('Login')),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.pump(const Duration(seconds: 2));
       await tester.pumpAndSettle();
       expect(find.text('New update available'), findsOneWidget);
       await tester.pumpWidget(const SizedBox.shrink());

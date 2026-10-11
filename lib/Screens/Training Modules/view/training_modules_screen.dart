@@ -20,7 +20,7 @@ class TrainingModulesScreen extends StatefulWidget {
 }
 
 class _TrainingModulesScreenState extends State<TrainingModulesScreen> {
-  String _type = 'All';
+  final String _type = 'All';
   DateTime? _date;
 
   bool _isLoading = true;

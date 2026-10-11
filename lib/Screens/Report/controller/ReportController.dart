@@ -11,7 +11,6 @@ import 'package:aeon_hrms/Screens/Report/model/PaySlipEmpCodeandMonthYearModel.d
 import 'package:aeon_hrms/Screens/Report/model/dedFieldModel.dart';
 import 'package:aeon_hrms/Screens/Report/model/netpayModel.dart';
 import 'package:aeon_hrms/Screens/Report/view/view_pdf.dart';
-import 'package:aeon_hrms/Utility/MLString.dart';
 import 'package:http/http.dart' as http;
 import 'package:get/get.dart';
 import 'package:aeon_hrms/Screens/Report/model/earnFieldModel.dart';
@@ -141,9 +140,7 @@ class ReportController extends GetxController {
         if (context.mounted)
           // ignore: curly_braces_in_flow_control_structures
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Payslip not available'),
-            ),
+            const SnackBar(content: Text('Payslip not available')),
           );
         return;
       }
@@ -171,9 +168,9 @@ class ReportController extends GetxController {
       debugPrint('Unable to download payslip: $error');
       if (context.mounted)
         // ignore: curly_braces_in_flow_control_structures
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Payslip not available')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Payslip not available')));
     } finally {
       ispayslipLoding.value = false;
       update();

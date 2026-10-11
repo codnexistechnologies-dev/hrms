@@ -12,7 +12,6 @@ import 'package:aeon_hrms/Screens/Time%20Attendence/model/attendanceRegApprovelL
 import 'package:aeon_hrms/Screens/Time%20Attendence/model/attendanceRegModel.dart';
 import 'package:aeon_hrms/Screens/Time%20Attendence/model/attendanceRegReturnList.dart';
 import 'package:aeon_hrms/Screens/Time%20Attendence/model/attendanceSummaryModel.dart';
-import 'package:aeon_hrms/Utility/MLString.dart';
 import 'package:aeon_hrms/Utility/shared_preferences_service.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -325,8 +324,7 @@ class AttendanceController extends GetxController {
     String? empCode;
     try {
       SharedPreferences myPrefs = await SharedPreferences.getInstance();
-      empCode =
-          myPrefs.getString('empcode') ?? SharedPref.getEmpCode();
+      empCode = myPrefs.getString('empcode') ?? SharedPref.getEmpCode();
       issaveGeoLocation = true;
       if (empCode == null || empCode.isEmpty) {
         throw StateError('EMP_CODE not found for location tracking');
@@ -334,12 +332,7 @@ class AttendanceController extends GetxController {
       // Offline-first: only write locally. The batched background sync
       // (WorkManager) pushes records to the server, so each point does not
       // fire its own HTTP request — keeps the server load low.
-      return await saveEmployeeData(
-        empCode,
-        latitude,
-        longitude,
-        address,
-      );
+      return await saveEmployeeData(empCode, latitude, longitude, address);
     } catch (e) {
       debugPrint('[Location] Could not persist point: $e');
       rethrow;

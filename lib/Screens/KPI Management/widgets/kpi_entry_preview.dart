@@ -61,8 +61,9 @@ class _KpiEntryPreviewState extends State<KpiEntryPreview> {
             firstDate: DateTime(2020),
             lastDate: DateTime(2100),
           );
-          if (selected != null && mounted)
+          if (selected != null && mounted) {
             setState(() => dates[field.label] = selected);
+          }
         },
         child: InputDecorator(
           decoration: decoration(field.label).copyWith(

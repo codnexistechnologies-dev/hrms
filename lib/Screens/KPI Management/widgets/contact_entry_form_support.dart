@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:aeon_hrms/Screens/KPI%20Management/LiquidationPlan/controller/LiquidationPlanController.dart';
 import 'package:aeon_hrms/constant.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -20,6 +21,7 @@ abstract class ContactEntryFormState<T extends StatefulWidget>
     extends State<T> {
   final formKey = GlobalKey<FormState>();
   final demoPlanController = Get.put(DemoPlanController());
+  final liquidationPlanController = Get.put(LiquidationPlanController());
   final fields = <String, TextEditingController>{
     for (final key in [
       'FARMER_NAME',
@@ -55,6 +57,7 @@ abstract class ContactEntryFormState<T extends StatefulWidget>
   bool locating = false;
   bool pickingPhoto = false;
   bool saving = false;
+  // final demoPlanController = Get.put(DemoPlanController(), permanent: true);
 
   @override
   void initState() {
@@ -202,14 +205,21 @@ abstract class ContactEntryFormState<T extends StatefulWidget>
     }),
   );
 
-  Widget productDropdown({bool required = false}) =>
+  Widget productDropdown({bool required = false, String? from, String? date}) =>
       masterDropdown<ProductData>(
         label: 'Product Name',
         values: () => demoPlanController.productList,
         selected: demoPlanController.productselectedValue,
         itemLabel: (product) => product.productName,
-        onChanged: (value) =>
-            demoPlanController.productselectedValue.value = value,
+        onChanged: (value) {
+          demoPlanController.productselectedValue.value = value;
+          if (from == "LiquidationPlan") {
+            liquidationPlanController.getLiquidationProductwiseAchievement(
+              value?.productCode ?? 0,
+              date ?? "",
+            );
+          }
+        },
         required: required,
       );
 
@@ -447,7 +457,7 @@ abstract class ContactEntryFormState<T extends StatefulWidget>
                         : ListView.separated(
                             padding: const EdgeInsets.symmetric(horizontal: 12),
                             itemCount: filteredProducts.length,
-                            separatorBuilder: (_, __) =>
+                            separatorBuilder: (_, _) =>
                                 const Divider(height: 1, indent: 56),
                             itemBuilder: (context, index) {
                               final product = filteredProducts[index];

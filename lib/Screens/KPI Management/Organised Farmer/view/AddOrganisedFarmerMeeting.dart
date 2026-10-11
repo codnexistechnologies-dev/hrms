@@ -80,7 +80,7 @@ class _AddOrganisedFarmerMeetingState extends State<AddOrganisedFarmerMeeting> {
   void initState() {
     super.initState();
     demoPlanController.isDemoPlanLoading = true;
-    bindLocatation();
+
     demoPlanController.getAllProductList();
     demoPlanController.GetAllCropList();
     demoPlanController.GetAllTankList();
@@ -106,23 +106,96 @@ class _AddOrganisedFarmerMeetingState extends State<AddOrganisedFarmerMeeting> {
     demoPlanController.isDemoPlanLoading = false;
   }
 
+  bool _isLocationLoading = false;
+  int _locationRevision = 0;
+
+  void _notifyImageCaptured() {
+    if (_image == null ||
+        _latitude == null ||
+        _longitude == null ||
+        _capturedDateTime == null) {
+      return;
+    }
+    widget.onImageCaptured(
+      ImageAndLocationData(
+        imagePath: _image!.path,
+        latitude: _latitude!,
+        longitude: _longitude!,
+        locationName: _address ?? '',
+        capturedDateTime: _capturedDateTime!,
+      ),
+    );
+  }
+
   Future<void> bindLocatation() async {
-    Position position = await Geolocator.getCurrentPosition(
-      desiredAccuracy: LocationAccuracy.high,
-    );
-
-    _latitude = position.latitude;
-    _longitude = position.longitude;
-
-    // Get address from coordinates
-    List<Placemark> placemarks = await placemarkFromCoordinates(
-      _latitude!,
-      _longitude!,
-    );
-
-    if (placemarks.isNotEmpty) {
-      _address =
-          "${placemarks[0].street!} ${placemarks[0].subLocality!} ${placemarks[0].subAdministrativeArea!} ${placemarks[0].locality!} ${placemarks[0].country!} ${placemarks[0].postalCode!}";
+    if (_isLocationLoading) return;
+    setState(() => _isLocationLoading = true);
+    try {
+      if (!await Geolocator.isLocationServiceEnabled()) {
+        throw Exception('Please turn on location services.');
+      }
+      var permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
+        throw Exception('Please enable location permission in app settings.');
+      }
+      final position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+        timeLimit: const Duration(seconds: 20),
+      );
+      if (!mounted) return;
+      setState(() {
+        _latitude = position.latitude;
+        _longitude = position.longitude;
+        _address = '';
+        _locationRevision++;
+      });
+      try {
+        final places = await placemarkFromCoordinates(
+          position.latitude,
+          position.longitude,
+        );
+        if (!mounted) return;
+        if (places.isNotEmpty) {
+          final place = places.first;
+          setState(() {
+            _address =
+                [
+                      place.street,
+                      place.subLocality,
+                      place.locality,
+                      place.administrativeArea,
+                      place.postalCode,
+                      place.country,
+                    ]
+                    .whereType<String>()
+                    .where((part) => part.trim().isNotEmpty)
+                    .toSet()
+                    .join(', ');
+            _locationRevision++;
+          });
+        }
+      } catch (_) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('GPS captured. Please enter the address manually.'),
+            ),
+          );
+        }
+      }
+      if (mounted) _notifyImageCaptured();
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Unable to capture location. $error')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLocationLoading = false);
     }
   }
 
@@ -147,6 +220,13 @@ class _AddOrganisedFarmerMeetingState extends State<AddOrganisedFarmerMeeting> {
 
   bool isLoading = false;
   Future<void> saveDemoPlanData() async {
+    if (!RegExp(r'^[0-9]{10}$').hasMatch(txt_MobileNumber.text)) {
+      Utility.alertInfo(
+        context,
+        data: 'Mobile number must be exactly 10 digits.',
+      );
+      return;
+    }
     if (demoPlanController.productselectedValue.value == null) {
       Utility.alertInfo(context, data: "Please Select Product Name.");
       return;
@@ -171,7 +251,9 @@ class _AddOrganisedFarmerMeetingState extends State<AddOrganisedFarmerMeeting> {
     } else if (txt_NoOfFarmerattendance.text == "") {
       Utility.alertInfo(context, data: "No Of farmer Count Can't be blank.");
       return;
-    } else if (_address == null || _latitude == null || _longitude == null) {
+    } else if ((_address?.trim().isEmpty ?? true) ||
+        _latitude == null ||
+        _longitude == null) {
       Utility.alertInfo(
         context,
         data:
@@ -230,47 +312,37 @@ class _AddOrganisedFarmerMeetingState extends State<AddOrganisedFarmerMeeting> {
       _latitude = null;
       _longitude = null;
       _address = null;
+      _locationRevision++;
       _capturedDateTime = null;
     });
   }
 
-  Future<void> _captureImageAndLocation() async {
-    setState(() {
-      _isImagesLoading = true; // Start loading
-    });
+  Future<void> _captureImageAndLocation(ImageSource source) async {
+    if (_isImagesLoading) return;
+    setState(() => _isImagesLoading = true);
     try {
-      // Capture image from camera
-      final pickedFile = (await _picker.pickImage(source: ImageSource.camera));
-
-      if (pickedFile != null) {
-        _image = File(pickedFile.path);
-
-        // Get current date-time
+      final selected = await _picker.pickImage(
+        source: source,
+        imageQuality: 85,
+      );
+      if (!mounted || selected == null) return;
+      setState(() {
+        _image = File(selected.path);
         _capturedDateTime = DateTime.now();
-        await bindLocatation();
-        // Callback with image and location data
-        widget.onImageCaptured(
-          ImageAndLocationData(
-            imagePath: _image!.path,
-            latitude: _latitude!,
-            longitude: _longitude!,
-            locationName: _address ?? "Unknown",
-            capturedDateTime: _capturedDateTime!,
+      });
+      _notifyImageCaptured();
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Unable to open camera or gallery. Check photo permissions.',
+            ),
           ),
         );
-      } else {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text("Image capture canceled.")));
       }
-    } catch (e) {
-      print("Error: $e");
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Failed to capture image and location.")),
-      );
     } finally {
-      setState(() {
-        _isImagesLoading = false; // Stop loading
-      });
+      if (mounted) setState(() => _isImagesLoading = false);
     }
   }
 
@@ -766,75 +838,112 @@ class _AddOrganisedFarmerMeetingState extends State<AddOrganisedFarmerMeeting> {
                                 ),
                               ),
                               const SizedBox(height: 10.0),
-                              ElevatedButton.icon(
-                                onPressed: _isImagesLoading
-                                    ? null
-                                    : _captureImageAndLocation, // Disable button while loading
-                                icon: Icon(Icons.camera),
-                                label: Text("Capture Image with Location"),
-                              ),
-                              SizedBox(height: 20),
-                              if (_isImagesLoading)
-                                Center(
-                                  child: CircularProgressIndicator(), // Show loading indicator
+                              InputDecorator(
+                                decoration: const InputDecoration(
+                                  labelText: 'Upload Photo',
+                                  border: OutlineInputBorder(),
                                 ),
-                              if (!_isImagesLoading && _image != null)
-                                Column(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Stack(
-                                      alignment: Alignment.bottomCenter,
+                                    if (_image != null) ...[
+                                      Image.file(
+                                        _image!,
+                                        height: 160,
+                                        width: double.infinity,
+                                        fit: BoxFit.contain,
+                                      ),
+                                      TextButton(
+                                        onPressed: _isImagesLoading
+                                            ? null
+                                            : () => setState(() {
+                                                _image = null;
+                                                _capturedDateTime = null;
+                                              }),
+                                        child: const Text('Remove Photo'),
+                                      ),
+                                    ],
+                                    if (_isImagesLoading)
+                                      const Center(
+                                        child: CircularProgressIndicator(),
+                                      ),
+                                    Wrap(
+                                      spacing: 12,
                                       children: [
-                                        Image.file(
-                                          _image!,
-                                          height: 400,
-                                          width: double.infinity,
-                                          fit: BoxFit.cover,
+                                        TextButton.icon(
+                                          onPressed: _isImagesLoading
+                                              ? null
+                                              : () => _captureImageAndLocation(
+                                                  ImageSource.camera,
+                                                ),
+                                          icon: const Icon(
+                                            Icons.camera_alt_outlined,
+                                          ),
+                                          label: const Text('Camera'),
                                         ),
-                                        Container(
-                                          width: double.infinity,
-                                          color: Colors.black.withValues(
-                                            alpha: 0.5,
+                                        TextButton.icon(
+                                          onPressed: _isImagesLoading
+                                              ? null
+                                              : () => _captureImageAndLocation(
+                                                  ImageSource.gallery,
+                                                ),
+                                          icon: const Icon(
+                                            Icons.photo_library_outlined,
                                           ),
-                                          padding: EdgeInsets.all(8.0),
-                                          child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              Text(
-                                                "Latitude: $_latitude",
-                                                style: TextStyle(
-                                                  color: Colors.white,
-                                                ),
-                                              ),
-                                              Text(
-                                                "Longitude: $_longitude",
-                                                style: TextStyle(
-                                                  color: Colors.white,
-                                                ),
-                                              ),
-                                              Text(
-                                                "Address: $_address",
-                                                style: TextStyle(
-                                                  color: Colors.white,
-                                                ),
-                                              ),
-                                              Text(
-                                                "Captured Date-Time: $_capturedDateTime",
-                                                style: TextStyle(
-                                                  color: Colors.white,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
+                                          label: const Text('Gallery'),
                                         ),
                                       ],
                                     ),
                                   ],
                                 ),
-                              if (!_isImagesLoading && _image == null)
-                                Text("No image captured yet."),
-                              SizedBox(height: 20),
+                              ),
+                              const SizedBox(height: 10),
+                              SizedBox(
+                                width: double.infinity,
+                                child: OutlinedButton.icon(
+                                  onPressed: _isLocationLoading
+                                      ? null
+                                      : bindLocatation,
+                                  icon: const Icon(Icons.my_location),
+                                  label: Text(
+                                    _isLocationLoading
+                                        ? 'Getting Location...'
+                                        : 'Capture Current Location',
+                                  ),
+                                  style: OutlinedButton.styleFrom(
+                                    shape: const StadiumBorder(),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 15),
+                              TextFormField(
+                                key: ValueKey(
+                                  'coordinates_${_latitude}_$_longitude',
+                                ),
+                                initialValue:
+                                    _latitude == null || _longitude == null
+                                    ? 'Location not captured'
+                                    : '${_latitude!.toStringAsFixed(7)}, ${_longitude!.toStringAsFixed(7)}',
+                                readOnly: true,
+                                decoration: const InputDecoration(
+                                  labelText: 'Latitude / Longitude',
+                                  border: OutlineInputBorder(),
+                                ),
+                              ),
+                              const SizedBox(height: 15),
+                              TextFormField(
+                                key: ValueKey('address_$_locationRevision'),
+                                initialValue: _address ?? '',
+                                maxLines: 3,
+                                onChanged: (value) => _address = value.trim(),
+                                decoration: const InputDecoration(
+                                  labelText: 'Address',
+                                  hintText: 'Address',
+                                  border: OutlineInputBorder(),
+                                ),
+                              ),
+                              const SizedBox(height: 20),
+
                               Center(
                                 child: Obx(
                                   () => ButtonGlobal(

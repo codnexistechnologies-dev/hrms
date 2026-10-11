@@ -267,7 +267,7 @@ class EmployeeCardPreview extends StatelessWidget {
                         width: 92,
                         fit: BoxFit.cover,
                         alignment: Alignment.topCenter,
-                        errorBuilder: (_, __, ___) => _photoPlaceholder(),
+                        errorBuilder: (_, _, _) => _photoPlaceholder(),
                       ),
                     )
                   else
@@ -446,12 +446,12 @@ class EmployeeCardPreview extends StatelessWidget {
 
   Widget _photoPlaceholder() => ClipOval(
     child: Image.network(
-      '${ApiConstant.imageUrl}/${IMAGES}/${_value(employee.emPPICT, '')}',
+      '${ApiConstant.imageUrl}/$IMAGES/${_value(employee.emPPICT, '')}',
       height: 100,
       width: 100,
       fit: BoxFit.cover,
       alignment: Alignment.topCenter,
-      errorBuilder: (_, __, ___) => Container(
+      errorBuilder: (_, _, _) => Container(
         height: 100,
         width: 100,
         color: Colors.white,

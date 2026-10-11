@@ -6,7 +6,6 @@ import 'package:aeon_hrms/Utility/shared_preferences_service.dart';
 import 'package:aeon_hrms/background_service/background_service.dart';
 import 'package:aeon_hrms/component/storage_helper.dart';
 import 'package:aeon_hrms/component/patch_update_notice.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -60,6 +59,8 @@ class MyApp extends StatelessWidget {
 
   static final GlobalKey<NavigatorState> _navigatorKey =
       GlobalKey<NavigatorState>();
+  static final PatchUpdateNavigatorObserver _patchNavigationObserver =
+      PatchUpdateNavigatorObserver();
 
   @override
   Widget build(BuildContext context) {
@@ -67,6 +68,7 @@ class MyApp extends StatelessWidget {
       create: (_) => UserDetailsRepository(),
       child: GetMaterialApp(
         navigatorKey: _navigatorKey,
+        navigatorObservers: [_patchNavigationObserver],
         debugShowCheckedModeBanner: false,
         title: 'Welcome to HRMS',
         builder: (context, child) => SafeArea(
@@ -74,6 +76,7 @@ class MyApp extends StatelessWidget {
           bottom: true,
           child: PatchUpdateNotice(
             navigatorKey: _navigatorKey,
+            navigationObserver: _patchNavigationObserver,
             child: child ?? const SizedBox.shrink(),
           ),
         ),

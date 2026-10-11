@@ -26,8 +26,11 @@ class LiquidationPlanAchi {
   String? paydate;
   int? liquidatioNPLANACHIEVEMENT;
 
-  LiquidationPlanAchi(
-      {this.emPCODE, this.paydate, this.liquidatioNPLANACHIEVEMENT});
+  LiquidationPlanAchi({
+    this.emPCODE,
+    this.paydate,
+    this.liquidatioNPLANACHIEVEMENT,
+  });
 
   LiquidationPlanAchi.fromJson(Map<String, dynamic> json) {
     emPCODE = json['emP_CODE'];

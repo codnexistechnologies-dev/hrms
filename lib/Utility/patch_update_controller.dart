@@ -13,7 +13,16 @@ class PatchUpdateController extends ChangeNotifier {
     final updater = ShorebirdUpdater();
     return PatchUpdateController(
       isAvailable: () => updater.isAvailable,
-      checkStatus: () => updater.checkForUpdate(track: UpdateTrack.stable),
+      checkStatus: () async {
+        // A staged patch can be detected offline, including one downloaded by
+        // Shorebird's automatic updater after our previous check completed.
+        final current = await updater.readCurrentPatch();
+        final next = await updater.readNextPatch();
+        if (current?.number != next?.number) {
+          return UpdateStatus.restartRequired;
+        }
+        return updater.checkForUpdate(track: UpdateTrack.stable);
+      },
       download: () => updater.update(track: UpdateTrack.stable),
     );
   }
@@ -27,17 +36,25 @@ class PatchUpdateController extends ChangeNotifier {
   DateTime? _lastCheck;
 
   Future<void> check({bool force = false}) async {
-    if (_disposed || _checking || !isAvailable()) return;
+    if (_disposed || _checking) return;
+    if (!isAvailable()) {
+      debugPrint(
+        '[App update] Shorebird unavailable. Install a Shorebird '
+        'release build; ordinary Flutter/debug builds cannot receive patches.',
+      );
+      return;
+    }
     final now = DateTime.now();
     if (!force &&
         _lastCheck != null &&
-        now.difference(_lastCheck!) < const Duration(minutes: 1)) {
+        now.difference(_lastCheck!) < const Duration(seconds: 10)) {
       return;
     }
     _lastCheck = now;
     _checking = true;
     try {
       var status = await checkStatus();
+      debugPrint('[App update] Status: $status');
       if (_disposed) return;
       if (status == UpdateStatus.outdated) {
         await download();
@@ -45,6 +62,7 @@ class PatchUpdateController extends ChangeNotifier {
         // Another automatic check may have downloaded the patch concurrently.
         // Confirm that a restart is needed rather than assuming update applied.
         status = await checkStatus();
+        debugPrint('[App update] Status after download: $status');
       }
       if (_disposed) return;
       final ready = status == UpdateStatus.restartRequired;

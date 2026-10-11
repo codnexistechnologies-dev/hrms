@@ -1,5 +1,4 @@
 import 'package:aeon_hrms/Screens/Employee%20management/controller/employee_controller.dart';
-import 'package:aeon_hrms/Screens/Employee%20management/view/employee_card_screen.dart';
 import 'package:aeon_hrms/Utility/MLString.dart';
 import 'package:aeon_hrms/Utility/api_constants.dart';
 import 'package:aeon_hrms/constant.dart';
@@ -155,8 +154,8 @@ class _EditProfileState extends State<EditProfile> {
                                                         ?.first
                                                         .emPPICT !=
                                                     ""
-                                            ? '${ApiConstant.imageUrl}/${IMAGES}/${controller.employeeDetailsModel?.data?.first.emPPICT}'
-                                            : '${ApiConstant.imageUrl}/${IMAGES}/blankHuman.jpg',
+                                            ? '${ApiConstant.imageUrl}/$IMAGES/${controller.employeeDetailsModel?.data?.first.emPPICT}'
+                                            : '${ApiConstant.imageUrl}/$IMAGES/blankHuman.jpg',
                                         fit: BoxFit.cover,
                                         errorBuilder:
                                             (context, error, stackTrace) {

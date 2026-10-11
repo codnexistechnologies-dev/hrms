@@ -7,12 +7,28 @@ import 'package:aeon_hrms/background_service/background_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+/// Keeps a mandatory update above startup/login navigation.
+class PatchUpdateNavigatorObserver extends NavigatorObserver {
+  VoidCallback? onNavigation;
+
+  @override
+  void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) {
+    onNavigation?.call();
+  }
+
+  @override
+  void didReplace({Route<dynamic>? newRoute, Route<dynamic>? oldRoute}) {
+    onNavigation?.call();
+  }
+}
+
 class PatchUpdateNotice extends StatefulWidget {
   const PatchUpdateNotice({
     required this.child,
     required this.navigatorKey,
     this.controller,
     this.restart,
+    this.navigationObserver,
     super.key,
   });
 
@@ -20,6 +36,7 @@ class PatchUpdateNotice extends StatefulWidget {
   final GlobalKey<NavigatorState> navigatorKey;
   final PatchUpdateController? controller;
   final Future<void> Function()? restart;
+  final PatchUpdateNavigatorObserver? navigationObserver;
 
   @override
   State<PatchUpdateNotice> createState() => _PatchUpdateNoticeState();
@@ -32,19 +49,40 @@ class _PatchUpdateNoticeState extends State<PatchUpdateNotice>
   Timer? _promptRetry;
   bool _sheetOpen = false;
   bool _prompted = false;
+  Route<dynamic>? _sheetRoute;
 
   @override
   void initState() {
     super.initState();
     _updates = widget.controller ?? PatchUpdateController.production();
     _updates.addListener(_onUpdate);
+    widget.navigationObserver?.onNavigation = _onNavigation;
     WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) unawaited(_check());
     });
-    _timer = Timer.periodic(const Duration(minutes: 15), (_) {
+    // The automatic updater may still be downloading during the first check.
+    // Poll soon enough to notice its completion in the same app session.
+    _timer = Timer.periodic(const Duration(seconds: 15), (_) {
       if (WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed) {
         unawaited(_check());
+      }
+    });
+  }
+
+  void _onNavigation() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final route = _sheetRoute;
+      if (_updates.restartRequired &&
+          route != null &&
+          route.isActive &&
+          !route.isCurrent) {
+        // Splash/login pushed a page above the sheet. Remove the covered modal
+        // so its completion handler can present it above the new page.
+        widget.navigatorKey.currentState?.removeRoute(route);
+      } else {
+        _onUpdate();
       }
     });
   }
@@ -96,7 +134,12 @@ class _PatchUpdateNoticeState extends State<PatchUpdateNotice>
 
   Future<void> _showUpdate() async {
     final sheetContext = widget.navigatorKey.currentState?.overlay?.context;
-    if (_sheetOpen || !_updates.restartRequired || sheetContext == null) return;
+    if (_sheetOpen || !_updates.restartRequired) return;
+    if (sheetContext == null) {
+      _promptRetry?.cancel();
+      _promptRetry = Timer(const Duration(seconds: 1), _onUpdate);
+      return;
+    }
     _sheetOpen = true;
     _prompted = true;
     try {
@@ -110,10 +153,14 @@ class _PatchUpdateNoticeState extends State<PatchUpdateNotice>
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
-        builder: (_) => PatchRestartSheet(onRestart: _restart),
+        builder: (context) {
+          _sheetRoute = ModalRoute.of(context);
+          return PatchRestartSheet(onRestart: _restart);
+        },
       );
     } finally {
       _sheetOpen = false;
+      _sheetRoute = null;
       // A login/splash route replacement can remove even a non-dismissible
       // modal. Re-present it on the new route if the update is still pending.
       _prompted = false;
@@ -135,6 +182,7 @@ class _PatchUpdateNoticeState extends State<PatchUpdateNotice>
     _timer?.cancel();
     _promptRetry?.cancel();
     _updates.removeListener(_onUpdate);
+    widget.navigationObserver?.onNavigation = null;
     if (widget.controller == null) _updates.dispose();
     super.dispose();
   }

@@ -56,16 +56,18 @@ class _HomeScreenState extends State<HomeScreen> {
       await controller.getEmployeeDetails();
       if (!mounted) return;
       final employees = controller.employeeDetailsModel?.data;
-      if (employees == null || employees.isEmpty)
+      if (employees == null || employees.isEmpty) {
         throw StateError('No employee details');
+      }
       await EmployeeCardScreen(employee: employees.first).launch(context);
     } catch (_) {
-      if (mounted)
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Unable to load employee card. Please try again.'),
           ),
         );
+      }
     } finally {
       _openingCard = false;
     }
@@ -217,8 +219,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   bottomLeft: Radius.circular(30.0),
                   bottomRight: Radius.circular(30.0),
                 ),
-                // color: Color.fromARGB(255, 129, 188, 224),
-                color: Color.fromARGB(255, 171, 224, 129),
+                color: Color.fromARGB(255, 129, 188, 224),
+                // color: Color.fromARGB(255, 171, 224, 129),
               ),
               child: Column(
                 children: [

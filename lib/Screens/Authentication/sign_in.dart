@@ -13,7 +13,6 @@ import 'package:device_info_plus/device_info_plus.dart';
 import 'package:http/http.dart' as http;
 import 'package:another_flushbar/flushbar.dart';
 import 'package:flutter/material.dart';
-import 'package:nb_utils/nb_utils.dart';
 import 'package:provider/provider.dart';
 
 class SignIn extends StatefulWidget {

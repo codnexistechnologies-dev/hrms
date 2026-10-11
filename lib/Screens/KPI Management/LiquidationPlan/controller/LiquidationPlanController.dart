@@ -5,13 +5,70 @@ import 'package:aeon_hrms/Screens/KPI%20Management/LiquidationPlan/model/Liquida
 import 'package:aeon_hrms/Utility/api_constants.dart';
 import 'package:get/get_rx/src/rx_types/rx_types.dart';
 import 'package:http/http.dart' as http;
-import 'package:aeon_hrms/Utility/MLString.dart';
 import 'package:aeon_hrms/Utility/shared_preferences_service.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get_state_manager/src/simple/get_controllers.dart';
 import 'package:dio/dio.dart' as dio;
 
 class LiquidationPlanController extends GetxController {
+  final liquidationProductAchievement = Rx<num>(0);
+  int _productAchievementRequestId = 0;
+
+  Future<num> getLiquidationProductwiseAchievement(
+    int productCode,
+    String payDate,
+  ) async {
+    final requestId = ++_productAchievementRequestId;
+    liquidationProductAchievement.value = 0;
+    if (productCode == 0) return 0;
+    try {
+      final achievement = await _fetchLiquidationProductwiseAchievement(
+        productCode,
+        payDate,
+      );
+      if (requestId == _productAchievementRequestId) {
+        liquidationProductAchievement.value = achievement;
+      }
+      return achievement;
+    } catch (error) {
+      debugPrint('Failed to load liquidation product achievement: $error');
+      return 0;
+    }
+  }
+
+  Future<num> _fetchLiquidationProductwiseAchievement(
+    int productCode,
+    String payDate,
+  ) async {
+    final empCode = SharedPref.getEmpCode();
+    if (empCode == null) {
+      throw Exception('Employee code is null');
+    }
+    final response = await http.post(
+      Uri.parse(
+        '${ApiConstant.baseUrl}/api/Kpi/GetLiquidationProductwiseAchievementByUseridandPayDate',
+      ).replace(
+        queryParameters: {
+          'EMP_CODE': empCode,
+          'Product_code': productCode.toString(),
+          'PAYDATE': payDate,
+        },
+      ),
+      headers: {'accept': 'application/json'},
+    );
+    if (response.statusCode != 200) {
+      throw Exception(
+        'Failed to load product achievement: ${response.statusCode}',
+      );
+    }
+    final jsonResponse = jsonDecode(response.body) as Map<String, dynamic>;
+    final data = jsonResponse['data'] as List<dynamic>?;
+    if (data == null || data.isEmpty) return 0;
+    final value = data.first['liquidatioN_PRODUCT_ACHIEVEMENT'];
+    if (value == null) return 0;
+    return value is num ? value : num.parse(value.toString());
+  }
+
   //Rx<KpiMaster?> productselectedValue = Rx<KpiMaster?>(null);
   var isSaveLiquaidationPlanLoding = false.obs;
   Future<Map<String, dynamic>> saveLiquidationPlan(
