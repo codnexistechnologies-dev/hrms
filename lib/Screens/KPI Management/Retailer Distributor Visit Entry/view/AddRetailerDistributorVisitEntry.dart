@@ -59,7 +59,10 @@ class _AddRetailerDistributorVisitEntryState
   Future<List<_ContactPerson>> fetchContactPeople(int visitTypeCode) async {
     final response = await dio.Dio().post(
       '${ApiConstant.baseUrl}/api/Kpi/GetRetailerDetailsByType',
-      queryParameters: {'VISIT_TYPE': visitTypeCode},
+      queryParameters: {
+        'VISIT_TYPE': visitTypeCode,
+        "EMP_CODE": SharedPref.getEmpCode().toString(),
+      },
       cancelToken: contactLoadCancelToken,
       options: dio.Options(headers: {'accept': 'application/json'}),
     );
